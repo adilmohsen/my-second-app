@@ -2,72 +2,53 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 # 1. إعدادات الصفحة
-st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
+st.set_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=2000, key="datarefresh")
 
-# 2. سحر الـ CSS (الخلفية الوردية + المستطيل الوردي المرتب)
+# 2. CSS (الخلفية الوردية + المستطيل الوردي)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
         background-image: url("https://raw.githubusercontent.com/adilmohsen/my-second-app/main/55fcafb76ebdf0b2fff590b1c0b6886c.jpg");
         background-size: cover;
     }}
-    
-    /* تنسيق مستطيل الكتابة الوردي */
     .stTextInput input {{
-        background-color: #FFD1DC !important; /* وردي ملكي */
-        border-radius: 15px !important;
+        background-color: #FFD1DC !important;
+        border-radius: 20px !important;
         border: 2px solid #FFB6C1 !important;
         color: #4B0082 !important;
-        height: 45px;
     }}
-
-    /* تنسيق الرسائل */
-    .stChatMessage {{ 
-        background-color: rgba(255, 255, 255, 0.9) !important; 
-        border-radius: 15px; 
-    }}
-
-    /* حاوية الإرسال في الأسفل مع مسافة بسيطة */
-    .footer-fixed {{
-        position: fixed;
-        bottom: 20px;
-        left: 10%;
-        right: 10%;
-        z-index: 1000;
-    }}
+    .stChatMessage {{ background-color: rgba(255, 255, 255, 0.9) !important; border-radius: 15px; }}
     </style>
     """, unsafe_allow_html=True)
 
-# 3. المخزن والبيانات
+# 3. المخزن
 @st.cache_resource
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# تهيئة النص في الـ session_state
-if "input_val" not in st.session_state: st.session_state.input_val = ""
+# تهيئة النصوص (مهم جداً للإيموجي)
+if "chat_msg" not in st.session_state: st.session_state.chat_msg = ""
 
-# --- شاشة تسجيل الدخول ---
+# --- الدخول ---
 if "my_name" not in st.session_state:
     st.title("👸 مملكة مريوم")
-    name = st.text_input("اسمج الملكي للدخول:")
-    if st.button("انطلاق للمملكة ✨"):
+    name = st.text_input("اسمج الملكي:")
+    if st.button("دخول ✨"):
         if name: st.session_state.my_name = name; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية (اليسار) ---
+# --- السايدبار (اليسار) ---
 with st.sidebar:
     st.title(f"👑 {st.session_state.my_name}")
-    st.write("---")
-    if st.button("🗑️ حذف كل الرسائل", use_container_width=True):
+    if st.button("🗑️ حذف الكل", use_container_width=True):
         all_msgs.clear(); st.rerun()
-    if st.button("⬅️ تسجيل الخروج", use_container_width=True):
+    if st.button("⬅️ خروج", use_container_width=True):
         del st.session_state.my_name; st.rerun()
 
 # --- واجهة الچات ---
 st.title("👸 The Queen Meryoum Chat 🌸")
 
-# عرض الرسائل
 for i, chat in enumerate(all_msgs):
     col_msg, col_opt = st.columns([0.9, 0.1])
     with col_msg:
@@ -78,44 +59,41 @@ for i, chat in enumerate(all_msgs):
                 st.session_state[f"o_{i}"] = not st.session_state.get(f"o_{i}", False)
             if st.session_state.get(f"o_{i}", False):
                 if st.button("🗑️", key=f"d_{i}"): all_msgs.pop(i); st.rerun()
-                if st.button("✏️", key=f"e_{i}"):
-                    st.session_state.edit_idx = i; st.session_state.edit_txt = chat['msg']; st.rerun()
 
-# نافذة التعديل
-if "edit_idx" in st.session_state:
-    with st.container(border=True):
-        new_val = st.text_input("عدلي رسالتج:", value=st.session_state.edit_txt)
-        if st.button("حفظ ✅"):
-            all_msgs[st.session_state.edit_idx]['msg'] = new_val
-            del st.session_state.edit_idx; st.rerun()
+# --- منطقة الإرسال (الحل السحري) ---
+st.markdown("<br><br><br>", unsafe_allow_html=True)
 
-st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True) # فراغ للرسايل
+# قائمة الإيموجيات
+if st.session_state.get("show_emo", False):
+    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
+    emo_cols = st.columns(8)
+    for idx, emo in enumerate(emojis):
+        if emo_cols[idx].button(emo, key=f"e_{idx}"):
+            st.session_state.chat_msg += emo # إضافة الإيموجي للنص
+            st.rerun()
 
-# --- منطقة الإرسال (المستطيل الوردي + الإيموجي بصف الصاروخ) ---
-with st.container():
-    # قائمة الإيموجيات (تظهر فوق المستطيل عند الضغط)
-    if st.session_state.get("show_emo", False):
-        emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
-        emo_cols = st.columns(8)
-        for idx, emo in enumerate(emojis):
-            if emo_cols[idx].button(emo, key=f"e_{idx}"):
-                st.session_state.input_val += emo
-                st.rerun()
-
-    # السطر الأساسي: مستطيل وردي | صاروخ | إيموجي
+# استخدام Form حتى يشتغل الـ Enter
+with st.form(key="chat_form", clear_on_submit=True):
     c1, c2, c3 = st.columns([0.7, 0.15, 0.15])
     
     with c1:
-        msg_input = st.text_input("Message", value=st.session_state.input_val, key="main_input", label_visibility="collapsed", placeholder="اكتبي رسالتج هنا...")
-
+        # المربع الوردي مربوط بالـ session_state
+        msg_input = st.text_input("Message", value=st.session_state.chat_msg, label_visibility="collapsed", placeholder="اكتبي هنا...")
+    
     with c2:
-        if st.button("🚀"):
-            if msg_input:
-                all_msgs.append({"name": st.session_state.my_name, "msg": msg_input})
-                st.session_state.input_val = "" # تصفير
-                st.rerun()
+        # زر الإرسال داخل الـ Form
+        submit = st.form_submit_button("🚀")
     
     with c3:
-        if st.button("😊"):
-            st.session_state.show_emo = not st.session_state.get("show_emo", False)
-            st.rerun()
+        # زر الإيموجي (خارج الفورم برمجياً بس داخله شكلياً)
+        emo_trigger = st.form_submit_button("😊")
+
+    if submit and msg_input:
+        all_msgs.append({"name": st.session_state.my_name, "msg": msg_input})
+        st.session_state.chat_msg = "" # تصفير النص
+        st.rerun()
+    
+    if emo_trigger:
+        st.session_state.show_emo = not st.session_state.get("show_emo", False)
+        st.session_state.chat_msg = msg_input # حفظ النص المكتوب قبل التحديث
+        st.rerun()
