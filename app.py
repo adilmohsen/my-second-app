@@ -2,29 +2,34 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 # 1. إعدادات الصفحة
-st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
+st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀", layout="centered")
 st_autorefresh(interval=2000, key="datarefresh")
 
-# 2. سحر الـ CSS (لتثبيت الخانة أسفل الشاشة وتنسيق الأزرار)
+# 2. CSS مخصص لترتيب منطقة الإرسال في الأسفل ومنع التشتت
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
         background-image: url("https://raw.githubusercontent.com/adilmohsen/my-second-app/main/55fcafb76ebdf0b2fff590b1c0b6886c.jpg");
         background-size: cover;
-        padding-bottom: 100px; /* مسافة حتى الرسايل ما تختفي ورا الخانة الثابتة */
+    }}
+    /* تنسيق منطقة الإرسال لتكون ثابتة ومرتبة */
+    .footer-container {{
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 800px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.9) !important; border-radius: 15px; }}
-    
-    /* تثبيت حاوية الإرسال في الأسفل */
-    div[data-testid="stVerticalBlock"] > div:last-child {{
-        position: fixed;
-        bottom: 10px;
-        background: white;
-        padding: 10px;
-        border-radius: 30px;
-        box-shadow: 0px -2px 10px rgba(0,0,0,0.1);
-        z-index: 1000;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -33,8 +38,8 @@ st.markdown(f"""
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# تهيئة الحالات
-if "temp_msg" not in st.session_state: st.session_state.temp_msg = ""
+# تهيئة النصوص
+if "input_val" not in st.session_state: st.session_state.input_val = ""
 
 # --- شاشة تسجيل الدخول ---
 if "my_name" not in st.session_state:
@@ -46,6 +51,9 @@ if "my_name" not in st.session_state:
 
 # --- عرض المحادثة ---
 st.title("👸 The Queen Meryoum Chat 🌸")
+st.write("---")
+
+# حاوية الرسايل (نضيف مساحة بالأسفل حتى لا تغطيها الخانة)
 for i, chat in enumerate(all_msgs):
     col_msg, col_opt = st.columns([0.9, 0.1])
     with col_msg:
@@ -66,31 +74,31 @@ if "edit_idx" in st.session_state:
             all_msgs[st.session_state.edit_idx]['msg'] = new_val
             del st.session_state.edit_idx; st.rerun()
 
-# --- منطقة الإرسال الثابتة (مثل التليجرام) ---
-st.markdown("---") # فاصل بصري
-footer = st.container()
-with footer:
-    # عرض الإيموجيات إذا تم الضغط على الزر
+st.markdown("<br><br><br><br><br>", unsafe_allow_html=True) # فراغ إضافي
+
+# --- منطقة الإرسال (الترتيب الصحيح بالـ Columns) ---
+with st.container():
+    # عرض الإيموجيات فوق الخانة إذا طلبناها
     if st.session_state.get("show_emo", False):
         emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
         emo_cols = st.columns(8)
         for idx, emo in enumerate(emojis):
-            if emo_cols[idx].button(emo, key=f"btn_e_{idx}"):
-                st.session_state.temp_msg += emo
+            if emo_cols[idx].button(emo, key=f"emo_{idx}"):
+                st.session_state.input_val += emo
                 st.rerun()
 
-    # السطر الأخير: إيموجي + نص + إرسال
+    # سطر الإرسال: ايموجي | خانة نص | ارسال
     c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
     with c1:
-        if st.button("😊", help="إيموجيات"):
+        if st.button("😊"):
             st.session_state.show_emo = not st.session_state.get("show_emo", False)
             st.rerun()
     with c2:
-        # الخانة الوحيدة للكتابة
-        msg_input = st.text_input("Message", value=st.session_state.temp_msg, label_visibility="collapsed", placeholder="اكتبي رسالتج هنا...")
+        # نستخدم الكي للتزامن
+        msg = st.text_input("Message", value=st.session_state.input_val, label_visibility="collapsed", placeholder="اكتبي هنا...")
     with c3:
         if st.button("🚀"):
-            if msg_input:
-                all_msgs.append({"name": st.session_state.my_name, "msg": msg_input})
-                st.session_state.temp_msg = "" # تصفير
+            if msg:
+                all_msgs.append({"name": st.session_state.my_name, "msg": msg})
+                st.session_state.input_val = ""
                 st.rerun()
