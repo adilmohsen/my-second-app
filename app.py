@@ -5,7 +5,7 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="chat_refresh_timer")
 
-# 2. سحر الـ CSS لتثبيت منطقة الإرسال في الأسفل
+# 2. CSS السحري لتثبيت المستطيل (Fixed Footer)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -14,16 +14,31 @@ st.markdown(f"""
         background-size: cover;
     }}
     
-    /* جعل منطقة الرسائل قابلة للتمرير مع ترك مسافة للمستطيل الأسفل */
+    /* ترك مساحة بالأسفل حتى الرسايل ما تختفي ورا المستطيل */
     .main .block-container {{
-        padding-bottom: 150px;
+        padding-bottom: 180px !important; 
     }}
 
-    /* تنسيق المستطيل الوردي */
+    /* تثبيت حاوية الإرسال بالأسفل تماماً */
+    footer {{visibility: hidden;}}
+    .stForm {{
+        position: fixed;
+        bottom: 30px; /* رفعت المستطيل شوية حتى يبين كامل */
+        left: 5%;
+        right: 5%;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 15px;
+        border-radius: 25px;
+        z-index: 1000;
+        border: 2px solid #FFB6C1 !important;
+        box-shadow: 0px -5px 15px rgba(0,0,0,0.1);
+    }}
+
+    /* المستطيل الوردي */
     .stTextInput input {{
         background-color: #FFD1DC !important;
         border-radius: 20px !important;
-        border: 2px solid #FFB6C1 !important;
+        border: 1px solid #FFB6C1 !important;
         color: #4B0082 !important;
     }}
 
@@ -50,7 +65,7 @@ if "my_name" not in st.session_state:
         if name: st.session_state.my_name = name; st.rerun()
     st.stop()
 
-# --- السايدبار (اليسار) ---
+# --- السايدبار ---
 with st.sidebar:
     st.title(f"👑 {st.session_state.my_name}")
     if st.button("🗑️ حذف الكل", use_container_width=True):
@@ -58,7 +73,7 @@ with st.sidebar:
     if st.button("⬅️ خروج", use_container_width=True):
         del st.session_state.my_name; st.rerun()
 
-# --- عرض الرسائل ---
+# --- عرض الرسائل (تصعد لي فوك) ---
 st.header("The Queen Meryoum Chat 🌸")
 
 for i, chat in enumerate(all_msgs):
@@ -78,23 +93,24 @@ for i, chat in enumerate(all_msgs):
 # نافذة التعديل
 if "edit_idx" in st.session_state:
     with st.container(border=True):
-        new_val = st.text_input("تعديل:", value=st.session_state.edit_txt)
+        new_val = st.text_input("عدلي رسالتج:", value=st.session_state.edit_txt)
         if st.button("حفظ ✅"):
             all_msgs[st.session_state.edit_idx]['msg'] = new_val
             del st.session_state.edit_idx; st.rerun()
 
-# --- منطقة الإرسال الثابتة (بالأسفل) ---
-# نستخدم container ونخليه بأسفل الكود حتى يظهر دائماً تحت
-st.write("---") 
+# --- منطقة الإرسال الثابتة (الـ Fixed Footer) ---
 if st.session_state.show_emo:
-    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
+    # الايموجيات تظهر فوك المستطيل مباشرة
+    st.markdown('<div style="position: fixed; bottom: 120px; left: 5%; right: 5%; z-index: 1001; background: white; padding: 10px; border-radius: 15px;">', unsafe_allow_html=True)
     emo_cols = st.columns(8)
+    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
     for idx, emo in enumerate(emojis):
         if emo_cols[idx].button(emo, key=f"e_{idx}"):
             st.session_state.chat_msg += emo
             st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with st.form(key="main_chat_form", clear_on_submit=True):
+with st.form(key="fixed_chat_form", clear_on_submit=True):
     c1, c2, c3 = st.columns([0.7, 0.15, 0.15])
     with c1:
         msg_input = st.text_input("Message", value=st.session_state.chat_msg, label_visibility="collapsed", placeholder="اكتبي هنا...")
