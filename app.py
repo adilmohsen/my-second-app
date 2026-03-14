@@ -5,7 +5,7 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="chat_refresh_timer")
 
-# 2. سحر الـ CSS (الوردي الكامل)
+# 2. سحر الـ CSS (لضبط الألوان الوردية وموقع الإيموجي)
 st.markdown("""
     <style>
     [data-testid="stAppViewContainer"] {
@@ -13,17 +13,21 @@ st.markdown("""
         background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
         background-size: cover;
     }
-    [data-testid="stSidebar"] {
-        background-color: #FFC0CB !important;
-    }
-    /* جعل مربع الدردشة وردي ناعم */
+    /* جعل مربع الدردشة وردي فاتح مثل طلبج */
     [data-testid="stChatInput"] {
-        background-color: #FFD1DC !important;
-        border-radius: 20px !important;
+        background-color: #FFF0F5 !important;
+        border-radius: 25px !important;
+        border: 1px solid #FFB6C1 !important;
     }
     .stChatMessage { 
         background-color: rgba(255, 255, 255, 0.8) !important; 
         border-radius: 15px; 
+    }
+    /* تحسين شكل أزرار الإيموجي السريعة */
+    .stButton button {
+        border-radius: 50% !important;
+        padding: 5px !important;
+        background-color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -33,8 +37,7 @@ st.markdown("""
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# تهيئة المتغيرات
-if "chat_msg" not in st.session_state: st.session_state.chat_msg = ""
+if "show_emojis" not in st.session_state: st.session_state.show_emojis = False
 
 # --- تسجيل الدخول ---
 if "my_name" not in st.session_state:
@@ -44,11 +47,11 @@ if "my_name" not in st.session_state:
         if name: st.session_state.my_name = name; st.rerun()
     st.stop()
 
-# --- السايدبار (رجوع تسجيل الخروج والحذف) ---
+# --- السايدبار (تسجيل الخروج وحذف الكل) ---
 with st.sidebar:
     st.title(f"👑 {st.session_state.my_name}")
     st.write("---")
-    if st.button("🗑️ حذف الكل", use_container_width=True):
+    if st.button("🗑️ حذف كل الرسائل", use_container_width=True):
         all_msgs.clear(); st.rerun()
     if st.button("⬅️ تسجيل الخروج", use_container_width=True):
         del st.session_state.my_name; st.rerun()
@@ -78,21 +81,29 @@ if "edit_idx" in st.session_state:
             all_msgs[st.session_state.edit_idx]['msg'] = new_val
             del st.session_state.edit_idx; st.rerun()
 
-# --- منطقة الإرسال (الإيموجيات + المربع الثابت) ---
+# --- منطقة الإرسال (مستطيل وردي + إيموجي جانبي) ---
 
-# قائمة الإيموجيات السريعة (تظهر فوق مربع الكتابة)
-st.write("---")
-emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
-emo_cols = st.columns(8)
-for idx, emo in enumerate(emojis):
-    if emo_cols[idx].button(emo, key=f"emo_{idx}"):
-        # ملاحظة: st.chat_input مبيها ميزة إضافة نص برمجياً بسهولة، 
-        # بس تكدرين تضغطين الإيموجي ويندز فوراً كرسالة سريعة!
-        all_msgs.append({"name": st.session_state.my_name, "msg": emo})
+# حاوية الإيموجيات تظهر فقط عند الطلب
+if st.session_state.show_emojis:
+    st.write("---")
+    emo_cols = st.columns(8)
+    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
+    for idx, emo in enumerate(emojis):
+        if emo_cols[idx].button(emo, key=f"emo_{idx}"):
+            all_msgs.append({"name": st.session_state.my_name, "msg": emo})
+            st.session_state.show_emojis = False # إغلاق القائمة بعد الاختيار
+            st.rerun()
+
+# ترتيب المربع مع زر الإيموجي بجانبه
+c1, c2 = st.columns([0.9, 0.1])
+with c2:
+    # زر الإيموجي الدائري بجانب المربع بالضبط مثل طلبج
+    if st.button("😊", key="emoji_trigger"):
+        st.session_state.show_emojis = not st.session_state.show_emojis
         st.rerun()
 
-# مربع الكتابة الثابت (st.chat_input يضمن عدم النزول جوه)
-prompt = st.chat_input("اكتبي رسالتج هنا يا ملكة مريوم...")
-if prompt:
-    all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
-    st.rerun()
+with c1:
+    prompt = st.chat_input("اكتبي رسالتج هنا يا ملكة...")
+    if prompt:
+        all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
+        st.rerun()
