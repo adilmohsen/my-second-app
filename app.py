@@ -1,23 +1,41 @@
-from flask import Flask, render_template
-import os
-from flask_cloudflared import run_with_cloudflared
+import streamlit as st
+import time
 
-app = Flask(__name__)
-run_with_cloudflared(app) # يفتح لج الرابط العالمي
+# إعدادات الصفحة - مريوم الحلوة
+st.set_page_config(page_title="محادثة مريوم", page_icon="💬", layout="centered")
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# تصميم الواجهة
+st.title("💬 غرفة محادثة مريوم")
+st.subheader("أهلاً بيكم في تطبيقي الثاني - نظام دردشة ذكي")
+st.divider()
 
-@app.route('/open_notepad')
-def open_notepad():
-    os.system("notepad.exe")
-    return "تم فتح Notepad"
+# خزن الرسايل في الجلسة (حتى لا تروح عند التحديث)
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-@app.route('/open_chrome')
-def open_chrome():
-    os.system("start chrome")
-    return "تم فتح Chrome"
+# عرض الرسايل السابقة بستايل الفقاعات
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-if __name__ == '__main__':
-    app.run()
+# مكان كتابة الرسالة (Input)
+if prompt := st.chat_input("اكتب رسالتك هنا يا مريوم..."):
+    # 1. عرض رسالة المستخدم
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # 2. محاكاة رد الجهاز (مثل البوت)
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        assistant_response = f"عاشت إيدج مريوم! وصلت رسالتج: ({prompt}) ✨"
+        
+        # تأثير الكتابة التدريجي
+        for chunk in assistant_response.split():
+            full_response += chunk + " "
+            time.sleep(0.05)
+            message_placeholder.markdown(full_response + "▌")
+        message_placeholder.markdown(full_response)
+    
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
