@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh # ضفنا هاي المكتبة
 
 # إعدادات الصفحة
-st.set_page_config(page_title="محادثة مريوم الحِلوه", page_icon="🎀")
+st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 
 # التحديث التلقائي (كل ثانيتين يحدّث الصفحة حتى تطلع رسايل المقابل فوراً)
 st_autorefresh(interval=2000, key="datarefresh")
