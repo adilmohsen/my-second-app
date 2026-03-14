@@ -1,129 +1,94 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# 1. إعدادات الصفحة
+# 1. إعدادات الصفحة (الاسم الملكي الجديد)
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
-st_autorefresh(interval=1000, key="chat_refresh_timer")
 
-# 2. سحر الـ CSS لضبط المسافات والثبات
+# 2. التحديث التلقائي (كل ثانيتين)
+st_autorefresh(interval=2000, key="datarefresh")
+
+# 3. الخلفية الوردية الخاصة بمريوم
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
-        background-color: #FFDEE9;
-        background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%);
+        background-image: url("https://raw.githubusercontent.com/adilmohsen/my-second-app/main/55fcafb76ebdf0b2fff590b1c0b6886c.jpg");
         background-size: cover;
     }}
-    
-    /* زيادة الفراغ بالأسفل حتى آخر رسالة تطلع كاملة وما تندفن */
-    .main .block-container {{
-        padding-bottom: 280px !important; 
-    }}
-
-    /* تثبيت حاوية الإرسال "وزعابيلها" بالأسفل */
-    footer {{visibility: hidden;}}
-    
-    .fixed-footer {{
-        position: fixed;
-        bottom: 15px;
-        left: 5%;
-        right: 5%;
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 15px;
-        border-radius: 30px;
-        z-index: 1000;
-        border: 2px solid #FFB6C1 !important;
-        box-shadow: 0px -5px 20px rgba(0,0,0,0.1);
-    }}
-
-    .stTextInput input {{
-        background-color: #FFD1DC !important;
-        border-radius: 20px !important;
-        border: 1px solid #FFB6C1 !important;
-        color: #4B0082 !important;
-        height: 45px;
-    }}
-
-    .stChatMessage {{ 
-        background-color: rgba(255, 255, 255, 0.8) !important; 
-        border-radius: 15px; 
+    /* تنسيق فقاعة الرسالة لتكون أوضح */
+    .stChatMessage {{
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border-radius: 15px;
+        padding: 10px;
+        margin-bottom: 5px;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# 3. المخزن
+# 4. المخزن المشترك
 @st.cache_resource
-def get_global_messages(): return []
+def get_global_messages():
+    return []
+
 all_msgs = get_global_messages()
 
-if "chat_msg" not in st.session_state: st.session_state.chat_msg = ""
-if "show_emo" not in st.session_state: st.session_state.show_emo = False
-
-# --- تسجيل الدخول ---
+# --- شاشة تسجيل الدخول ---
 if "my_name" not in st.session_state:
-    st.title("👸 مملكة مريوم")
-    name = st.text_input("اسمج الملكي:", key="login_name")
-    if st.button("انطلاق ✨"):
-        if name: st.session_state.my_name = name; st.rerun()
+    st.title("🎀 أهلاً بيج بالچات الوردي")
+    name_input = st.text_input("قبل ما نبدأ، اكتبي اسمج هنا:")
+    if st.button("دخول للچات"):
+        if name_input:
+            st.session_state.my_name = name_input
+            st.rerun()
+        else:
+            st.warning("لازم تكتبين اسم حتى تدخلين!")
     st.stop()
 
-# --- السايدبار ---
-with st.sidebar:
-    st.title(f"👑 {st.session_state.my_name}")
-    st.write("---")
-    if st.button("🗑️ حذف الكل", use_container_width=True):
-        all_msgs.clear(); st.rerun()
-    if st.button("⬅️ خروج", use_container_width=True):
-        del st.session_state.my_name; st.rerun()
+# --- القائمة الجانبية (Sidebar) ---
+st.sidebar.title(f"الملكة {st.session_state.my_name} ✨")
+if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
+    all_msgs.clear()
+    st.rerun()
 
-# --- واجهة الچات (الرسائل تصعد وتظهر كاملة) ---
-st.header("The Queen Meryoum Chat 🌸")
+if st.sidebar.button("تسجيل الخروج ⬅️"):
+    del st.session_state.my_name
+    st.rerun()
 
-# حاوية للرسائل
-chat_placeholder = st.container()
+# --- واجهة الچات ---
+st.title("🎀 محادثة مريوم المشتركة")
 
-with chat_placeholder:
-    for i, chat in enumerate(all_msgs):
-        col_msg, col_opt = st.columns([0.85, 0.15])
-        with col_msg:
-            with st.chat_message("user"): st.write(f"**{chat['name']}:** {chat['msg']}")
-        
-        if chat['name'] == st.session_state.my_name:
-            with col_opt:
-                if st.button("⋮", key=f"m_{i}"):
-                    st.session_state[f"o_{i}"] = not st.session_state.get(f"o_{i}", False)
-                if st.session_state.get(f"o_{i}", False):
-                    if st.button("🗑️", key=f"d_{i}"): all_msgs.pop(i); st.rerun()
-                    if st.button("✏️", key=f"e_{i}"):
-                        st.session_state.edit_idx = i; st.session_state.edit_txt = chat['msg']; st.rerun()
-
-# --- منطقة الإرسال الثابتة ---
-st.markdown('<div class="fixed-footer">', unsafe_allow_html=True)
-
-if st.session_state.show_emo:
-    emo_cols = st.columns(8)
-    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
-    for idx, emo in enumerate(emojis):
-        if emo_cols[idx].button(emo, key=f"e_{idx}"):
-            st.session_state.chat_msg += emo
-            st.rerun()
-
-with st.form(key="fixed_chat_form", clear_on_submit=True):
-    c1, c2, c3 = st.columns([0.7, 0.15, 0.15])
-    with c1:
-        msg_input = st.text_input("Message", value=st.session_state.chat_msg, label_visibility="collapsed", placeholder="اكتبي هنا...")
-    with c2:
-        submit = st.form_submit_button("🚀")
-    with c3:
-        emo_trigger = st.form_submit_button("😊")
-
-    if submit and msg_input:
-        all_msgs.append({"name": st.session_state.my_name, "msg": msg_input})
-        st.session_state.chat_msg = ""
-        st.rerun()
+# عرض الرسائل مع خاصية الحذف والتعديل
+for i, chat in enumerate(all_msgs):
+    # تقسيم السطر: الرسالة تأخذ مساحة كبيرة، والأزرار مساحة صغيرة
+    col1, col2, col3 = st.columns([0.7, 0.15, 0.15])
     
-    if emo_trigger:
-        st.session_state.show_emo = not st.session_state.show_emo
-        st.session_state.chat_msg = msg_input
+    with col1:
+        with st.chat_message("user"):
+            st.write(f"**{chat['name']}:** {chat['msg']}")
+            
+    # أزرار التحكم تظهر فقط لصاحب الرسالة
+    if chat['name'] == st.session_state.my_name:
+        with col2:
+            if st.button("🗑️", key=f"del_{i}", help="حذف الرسالة"):
+                all_msgs.pop(i)
+                st.rerun()
+        with col3:
+            if st.button("✏️", key=f"edit_{i}", help="تعديل الرسالة"):
+                st.session_state.edit_index = i
+                st.session_state.edit_text = chat['msg']
+
+# منطقة التعديل (تظهر فقط عند الضغط على زر القلم)
+if "edit_index" in st.session_state:
+    st.divider()
+    new_text = st.text_input("تعديل رسالتج:", value=st.session_state.edit_text)
+    if st.button("حفظ التعديل ✅"):
+        all_msgs[st.session_state.edit_index]['msg'] = new_text
+        del st.session_state.edit_index # إغلاق وضع التعديل
+        st.rerun()
+    if st.button("إلغاء ❌"):
+        del st.session_state.edit_index
         st.rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)
+# --- خانة إرسال الرسالة الجديدة ---
+if prompt := st.chat_input("اكتبي رسالتج هنا..."):
+    all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
+    st.rerun()
