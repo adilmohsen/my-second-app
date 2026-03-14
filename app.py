@@ -3,7 +3,7 @@ import streamlit as st
 # إعدادات الصفحة
 st.set_page_config(page_title="محادثة مريوم الحِلوه", page_icon="🎀")
 
-# الخلفية الوردية
+# الخلفية الوردية مالتج
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -13,21 +13,24 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎀 محادثة مريوم")
+# --- السحر هنا: مخزن مشترك للكل بدون قاعدة بيانات ---
+@st.cache_resource
+def get_global_messages():
+    return [] # هاي القائمة راح يشوفها الكل ويعدلون عليها
+
+all_msgs = get_global_messages()
+
+st.title("🎀 چات مريوم المشترك")
 
 # اسم المستخدم
 user_name = st.sidebar.text_input("اسمج مريوم:", "مريوم")
 
-# خزن الرسايل (بصورة مؤقتة للكل)
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-# عرض الرسايل القديمة
-for chat in st.session_state.chat_history:
+# عرض الرسايل (هنا الكل راح يشوف نفس الرسايل)
+for chat in all_msgs:
     with st.chat_message("user"):
         st.write(f"**{chat['name']}:** {chat['msg']}")
 
 # صندوق الكتابة
-if prompt := st.chat_input("اكتبي رسالتج هنا..."):
-    st.session_state.chat_history.append({"name": user_name, "msg": prompt})
+if prompt := st.chat_input("اكتبي رسالتج هنا للكل..."):
+    all_msgs.append({"name": user_name, "msg": prompt})
     st.rerun()
