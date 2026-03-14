@@ -3,7 +3,7 @@ import streamlit as st
 # إعدادات الصفحة
 st.set_page_config(page_title="محادثة مريوم الحِلوه", page_icon="🎀")
 
-# الخلفية الوردية مالتج
+# الخلفية الوردية
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -13,24 +13,45 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- السحر هنا: مخزن مشترك للكل بدون قاعدة بيانات ---
+# المخزن المشترك بالسيرفر
 @st.cache_resource
 def get_global_messages():
-    return [] # هاي القائمة راح يشوفها الكل ويعدلون عليها
+    return []
 
 all_msgs = get_global_messages()
 
-st.title("🎀 چات مريوم المشترك")
+# --- شاشة تسجيل الدخول ---
+if "my_name" not in st.session_state:
+    st.title("🎀 أهلاً بيج بالچات الوردي")
+    name_input = st.text_input("قبل ما نبدأ، اكتبي اسمج هنا:")
+    if st.button("دخول للچات"):
+        if name_input:
+            st.session_state.my_name = name_input
+            st.rerun()
+        else:
+            st.warning("لازم تكتبين اسم حتى تدخلين!")
+    st.stop() # يوقف الكود هنا وما يخلي الباقي يظهر إلا بعد الدخول
 
-# اسم المستخدم
-user_name = st.sidebar.text_input("اسمج مريوم:", "مريوم")
+# --- إذا تم إدخال الاسم، تظهر الواجهة الجوة ---
 
-# عرض الرسايل (هنا الكل راح يشوف نفس الرسايل)
+# القائمة الجانبية (Sidebar)
+st.sidebar.title(f"أهلاً {st.session_state.my_name} ✨")
+if st.sidebar.button("حذف كل الرسايل 🗑️"):
+    all_msgs.clear()
+    st.rerun()
+
+if st.sidebar.button("تسجيل الخروج ⬅️"):
+    del st.session_state.my_name
+    st.rerun()
+
+# واجهة الچات
+st.title("🎀 محادثة مريوم المشتركة")
+
 for chat in all_msgs:
+    # تنسيق بسيط: إذا الرسالة مني تطلع بلون مختلف (اختياري)
     with st.chat_message("user"):
         st.write(f"**{chat['name']}:** {chat['msg']}")
 
-# صندوق الكتابة
-if prompt := st.chat_input("اكتبي رسالتج هنا للكل..."):
-    all_msgs.append({"name": user_name, "msg": prompt})
+if prompt := st.chat_input("اكتبي رسالتج هنا..."):
+    all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
     st.rerun()
