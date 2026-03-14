@@ -1,9 +1,10 @@
 import streamlit as st
+import os
 
 # إعدادات الصفحة
-st.set_page_config(page_title="مريوم الحِلوه", page_icon="🎀", layout="centered")
+st.set_page_config(page_title="تطبيق مريوم الحِلوه", page_icon="🎀")
 
-# إضافة الخلفية الوردية وتعديل شكل الفقاعات لتشبه التليجرام
+# إضافة الخلفية الوردية وتنسيق فقاعات المراسلة
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -11,51 +12,60 @@ st.markdown(f"""
         background-size: cover;
         background-attachment: fixed;
     }}
-    .stChatMessage {{
-        border-radius: 15px;
-        padding: 10px;
-        margin-bottom: 10px;
+    /* تنسيق فقاعة المستخدم (المرسل) على اليمين */
+    .stChatMessage:nth-child(even) {{
+        background-color: #fce4ec !important;
+        border-radius: 15px 15px 0px 15px !important;
+        margin-left: auto !important;
+        width: fit-content !important;
+        max-width: 80% !important;
     }}
-    /* تعديل جهة رسالة المستخدم لتكون على اليمين مثل التلي */
-    [data-testid="stChatMessage"]:nth-child(even) {{
-        flex-direction: row-reverse;
-        text-align: right;
-        background-color: #dcf8c6; /* لون أخضر فاتح للمرسل */
+    /* تنسيق فقاعة الرد (المستلم) على اليسار */
+    .stChatMessage:nth-child(odd) {{
+        background-color: #ffffff !important;
+        border-radius: 15px 15px 15px 0px !important;
+        width: fit-content !important;
+        max-width: 80% !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🎀 تطبيق مريوم الحِلوه")
 
-# نظام الاسم (الخاص)
+# نظام الهوية
 if "username" not in st.session_state:
-    st.session_state.username = st.text_input("ادخلي اسمج المميز للدخول (ما يصير يتكرر):", "")
+    st.session_state.username = ""
 
-if st.session_state.username:
-    st.sidebar.header(f"👤 الملف الشخصي: {st.session_state.username}")
-    st.sidebar.write("هنا تكدرين تبحثين عن الأصدقاء (قريباً)")
-    
-    # خزن المحادثة
+if not st.session_state.username:
+    with st.container():
+        name = st.text_input("ادخلي اسمج المميز لبدء المراسلة:")
+        if st.button("دخول إلى الدردشة"):
+            if name:
+                st.session_state.username = name
+                st.rerun()
+else:
+    # القائمة الجانبيه لإرسال الملفات
+    with st.sidebar:
+        st.header(f"👤 {st.session_state.username}")
+        st.divider()
+        uploaded_file = st.file_uploader("📎 إرسال ملف أو صورة", type=['png', 'jpg', 'jpeg', 'pdf'])
+        if uploaded_file:
+            st.success(f"تم إرسال الملف: {uploaded_file.name}")
+
+    # خزن وعرض الرسائل
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # عرض المحادثة
+    # عرض المحادثة بأسلوب التليجرام
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(f"**{msg['user']}:** {msg['content']}")
 
-    # إرسال الرسائل (تدعم الايموجيات تلقائياً)
-    if prompt := st.chat_input("اكتبي رسالتج هنا مريوم... 🎀✨"):
-        # إضافة رسالة المستخدم
+    # صندوق المراسلة الفوري
+    if prompt := st.chat_input("اكتبي رسالتج هنا مريوم..."):
+        # إضافة رسالتج
         st.session_state.messages.append({"role": "user", "user": st.session_state.username, "content": prompt})
         
-        # رد تلقائي بسيط (محاكاة للمستلم)
-        st.session_state.messages.append({"role": "assistant", "user": "النظام", "content": f"وصلت رسالتج يا {st.session_state.username}!"})
+        # محاكاة رد النظام (حتى تبين المراسلة شغالة)
+        st.session_state.messages.append({"role": "assistant", "user": "مريوم بوت", "content": f"وصلت رسالتج: {prompt} ✨"})
         st.rerun()
-
-    # ميزة إرسال الملفات
-    with st.sidebar:
-        st.divider()
-        uploaded_file = st.file_uploader("📎 إرسال ملفات (صور، PDF)", type=['png', 'jpg', 'pdf'])
-        if uploaded_file:
-            st.success(f"تم تحميل: {uploaded_file.name}")
