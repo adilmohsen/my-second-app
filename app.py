@@ -3,18 +3,24 @@ from streamlit_autorefresh import st_autorefresh
 
 # 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
-
-# التحديث التلقائي (كل ثانية واحدة - 1000 مللي ثانية)
-# نستخدم key مختلف حتى ما يتصادم ويه المدخلات
 st_autorefresh(interval=1000, key="chat_refresh_timer")
 
-# 2. CSS (الخلفية والمستطيل الوردي)
+# 2. سحر الـ CSS (الخلفية الوردية وكل التفاصيل)
 st.markdown(f"""
     <style>
+    /* الخلفية الوردية للصفحة بالكامل */
     [data-testid="stAppViewContainer"] {{
-        background-image: url("https://raw.githubusercontent.com/adilmohsen/my-second-app/main/55fcafb76ebdf0b2fff590b1c0b6886c.jpg");
+        background-color: #FFDEE9;
+        background-image: linear-gradient(0deg, #FFDEE9 0%, #B5FFFC 100%); /* تدرج وردي هادئ */
         background-size: cover;
     }}
+    
+    /* جعل السايدبار (اليسار) وردي أيضاً */
+    [data-testid="stSidebar"] {{
+        background-color: #FFC0CB !important;
+    }}
+
+    /* تنسيق المستطيل الوردي للكتابة */
     .stTextInput input {{
         background-color: #FFD1DC !important;
         border-radius: 20px !important;
@@ -22,7 +28,13 @@ st.markdown(f"""
         color: #4B0082 !important;
         height: 45px;
     }}
-    .stChatMessage {{ background-color: rgba(255, 255, 255, 0.9) !important; border-radius: 15px; }}
+
+    /* تنسيق فقاعات الدردشة */
+    .stChatMessage {{ 
+        background-color: rgba(255, 255, 255, 0.8) !important; 
+        border-radius: 15px; 
+        border: 1px solid #FFB6C1;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -31,7 +43,6 @@ st.markdown(f"""
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# تهيئة النصوص في الـ session_state
 if "chat_msg" not in st.session_state: st.session_state.chat_msg = ""
 if "show_emo" not in st.session_state: st.session_state.show_emo = False
 
@@ -53,25 +64,40 @@ with st.sidebar:
         del st.session_state.my_name; st.rerun()
 
 # --- واجهة الچات ---
-st.title("👸 The Queen Meryoum Chat 🌸")
+st.header("The Queen Meryoum Chat 🌸")
 
-# عرض الرسائل
 for i, chat in enumerate(all_msgs):
-    col_msg, col_opt = st.columns([0.9, 0.1])
+    col_msg, col_opt = st.columns([0.85, 0.15])
     with col_msg:
         with st.chat_message("user"): st.write(f"**{chat['name']}:** {chat['msg']}")
+    
     if chat['name'] == st.session_state.my_name:
         with col_opt:
             if st.button("⋮", key=f"m_{i}"):
                 st.session_state[f"o_{i}"] = not st.session_state.get(f"o_{i}", False)
+            
             if st.session_state.get(f"o_{i}", False):
                 if st.button("🗑️", key=f"d_{i}"): all_msgs.pop(i); st.rerun()
+                if st.button("✏️", key=f"e_{i}"):
+                    st.session_state.edit_idx = i
+                    st.session_state.edit_txt = chat['msg']
+                    st.rerun()
+
+# نافذة التعديل
+if "edit_idx" in st.session_state:
+    with st.container(border=True):
+        st.write("📝 تعديل رسالتج:")
+        new_val = st.text_input("النص الجديد:", value=st.session_state.edit_txt)
+        col_s1, col_s2 = st.columns(2)
+        if col_s1.button("حفظ ✅", key="save_edit"):
+            all_msgs[st.session_state.edit_idx]['msg'] = new_val
+            del st.session_state.edit_idx; st.rerun()
+        if col_s2.button("إلغاء ❌", key="cancel_edit"):
+            del st.session_state.edit_idx; st.rerun()
 
 st.markdown("<br><br><br><br>", unsafe_allow_html=True)
 
-# --- منطقة الإرسال (تحديث ثانية + Enter + إيموجي) ---
-
-# قائمة الإيموجيات (تظهر عند الحاجة)
+# --- منطقة الإرسال ---
 if st.session_state.show_emo:
     emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
     emo_cols = st.columns(8)
@@ -80,27 +106,21 @@ if st.session_state.show_emo:
             st.session_state.chat_msg += emo
             st.rerun()
 
-# استخدام Form لضمان عمل الـ Enter واستقرار الكتابة
 with st.form(key="main_chat_form", clear_on_submit=True):
     c1, c2, c3 = st.columns([0.7, 0.15, 0.15])
-    
     with c1:
-        # المربع الوردي
         msg_input = st.text_input("Message", value=st.session_state.chat_msg, label_visibility="collapsed", placeholder="اكتبي هنا...")
-    
     with c2:
         submit = st.form_submit_button("🚀")
-    
     with c3:
         emo_trigger = st.form_submit_button("😊")
 
-    # معالجة الأزرار
     if submit and msg_input:
         all_msgs.append({"name": st.session_state.my_name, "msg": msg_input})
-        st.session_state.chat_msg = "" # تصفير
+        st.session_state.chat_msg = ""
         st.rerun()
     
     if emo_trigger:
         st.session_state.show_emo = not st.session_state.show_emo
-        st.session_state.chat_msg = msg_input # حفظ المكتوب
+        st.session_state.chat_msg = msg_input
         st.rerun()
