@@ -1,112 +1,104 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# 1. إعدادات الصفحة الفخمة
+# 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 
-# 2. التحديث التلقائي (كل ثانيتين)
+# 2. التحديث التلقائي
 st_autorefresh(interval=2000, key="datarefresh")
 
-# 3. ستايل الـ CSS للخلفية والفقاعات والوضوح
+# 3. الستايل (CSS) للجمالية والوضوح
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
         background-image: url("https://raw.githubusercontent.com/adilmohsen/my-second-app/main/55fcafb76ebdf0b2fff590b1c0b6886c.jpg");
         background-size: cover;
-        background-position: center;
     }}
-    /* تنسيق الرسائل لتكون واضحة جداً */
     .stChatMessage {{
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        border: 1px solid #FFB6C1;
+        background-color: rgba(255, 255, 255, 0.9) !important;
         border-radius: 15px;
         padding: 10px;
-        margin-bottom: 5px;
         color: #4B0082;
-    }}
-    /* تنسيق أزرار الإيموجيات */
-    .stButton>button {{
-        border-radius: 20px;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-# 4. مخزن الرسائل المشترك
+# 4. المخزن المشترك
 @st.cache_resource
 def get_global_messages():
     return []
 
 all_msgs = get_global_messages()
 
-# --- شاشة تسجيل الدخول ---
+# --- الدخول ---
 if "my_name" not in st.session_state:
-    st.title("👸 مملكة مريوم الورديّة")
-    name_input = st.text_input("اكتبي اسمج الملكي للدخول:")
-    if st.button("انطلاق للچات 🚀"):
+    st.title("👸 مملكة مريوم")
+    name_input = st.text_input("اسمج الملكي:")
+    if st.button("دخول ✨"):
         if name_input:
             st.session_state.my_name = name_input
             st.rerun()
-        else:
-            st.warning("لازم تكتبين اسمج أولاً! 🌸")
     st.stop()
 
-# --- القائمة الجانبية (Sidebar) ---
+# --- القائمة الجانبية ---
 st.sidebar.title(f"الملكة {st.session_state.my_name} ✨")
-st.sidebar.markdown("---")
-if st.sidebar.button("مسح السجل بالكامل 🗑️"):
+if st.sidebar.button("مسح السجل 🗑️"):
     all_msgs.clear()
     st.rerun()
 
-if st.sidebar.button("تسجيل الخروج ⬅️"):
-    del st.session_state.my_name
-    st.rerun()
-
-# --- واجهة الچات الرئيسية ---
+# --- واجهة الچات ---
 st.title("👸 The Queen Meryoum Chat 🌸")
 
-# عرض الرسائل مع أزرار التحكم
 for i, chat in enumerate(all_msgs):
-    col1, col2, col3 = st.columns([0.74, 0.13, 0.13])
+    col_msg, col_opt = st.columns([0.85, 0.15])
     
-    with col1:
+    with col_msg:
         with st.chat_message("user"):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             
-    # أزرار الحذف والتعديل تظهر فقط لصاحب الرسالة
+    # خاصية الـ 3 نقاط (تظهر فقط لصاحب الرسالة)
     if chat['name'] == st.session_state.my_name:
-        with col2:
-            if st.button("🗑️", key=f"del_{i}", help="حذف"):
-                all_msgs.pop(i)
-                st.rerun()
-        with col3:
-            if st.button("✏️", key=f"edit_{i}", help="تعديل"):
-                st.session_state.edit_index = i
-                st.session_state.edit_text = chat['msg']
+        with col_opt:
+            if st.button("⋮", key=f"menu_{i}"):
+                st.session_state[f"show_options_{i}"] = not st.session_state.get(f"show_options_{i}", False)
+            
+            if st.session_state.get(f"show_options_{i}", False):
+                if st.button("🗑️ حذف", key=f"real_del_{i}"):
+                    all_msgs.pop(i)
+                    del st.session_state[f"show_options_{i}"]
+                    st.rerun()
+                if st.button("✏️ تعديل", key=f"real_edit_{i}"):
+                    st.session_state.edit_index = i
+                    st.session_state.edit_text = chat['msg']
+                    del st.session_state[f"show_options_{i}"]
+                    st.rerun()
 
-# نافذة التعديل (تظهر عند الضغط على القلم)
+# نافذة التعديل
 if "edit_index" in st.session_state:
-    st.info("وضع التعديل نشط الآن ✍️")
-    new_text = st.text_input("عدلي رسالتج هنا:", value=st.session_state.edit_text)
-    c_edit1, c_edit2 = st.columns(2)
-    if c_edit1.button("حفظ التعديل ✅"):
+    st.info("تعديل الرسالة ✍️")
+    new_text = st.text_input("النص الجديد:", value=st.session_state.edit_text)
+    if st.button("حفظ ✅"):
         all_msgs[st.session_state.edit_index]['msg'] = new_text
-        del st.session_state.edit_index
-        st.rerun()
-    if c_edit2.button("إلغاء ❌"):
         del st.session_state.edit_index
         st.rerun()
 
 st.divider()
 
-# --- قسم الإيموجيات السريعة ---
-st.write("إيموجيات سريعة للملكة 🎀:")
-emo_cols = st.columns(8)
-quick_emojis = ["🌸", "👑", "💖", "✨", "🎀", "🦄", "🍭", "🦋"]
-for i, emo in enumerate(quick_emojis):
-    if emo_cols[i].button(emo, key=f"quick_emo_{i}"):
-        st.toast(f"تم اختيار {emo}، انسخيه وضيفيه لرسالتج!")
+# --- زر الإيموجيات المدمج بصف الإرسال ---
+col_emoji, col_input = st.columns([0.1, 0.9])
 
-# --- خانة الكتابة ---
-if prompt := st.chat_input("اكتبي رسالتج هنا يا ملكة..."):
-    all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
-    st.rerun()
+with col_emoji:
+    if st.button("😊", help="إيموجيات"):
+        st.session_state.show_emojis = not st.session_state.get("show_emojis", False)
+
+if st.session_state.get("show_emojis", False):
+    emojis = ["🌸", "👑", "💖", "✨", "🎀", "😂", "🔥", "💀"]
+    emo_cols = st.columns(8)
+    for idx, emo in enumerate(emojis):
+        if emo_cols[idx].button(emo, key=f"q_emo_{idx}"):
+            st.toast(f"تم نسخ {emo}!") # تذكير للملكة بالنسخ
+
+with col_input:
+    if prompt := st.chat_input("اكتبي رسالتج هنا يا ملكة..."):
+        all_msgs.append({"name": st.session_state.my_name, "msg": prompt})
+        st.rerun()
