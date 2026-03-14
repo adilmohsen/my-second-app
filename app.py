@@ -1,7 +1,11 @@
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh # ضفنا هاي المكتبة
 
 # إعدادات الصفحة
 st.set_page_config(page_title="محادثة مريوم الحِلوه", page_icon="🎀")
+
+# التحديث التلقائي (كل ثانيتين يحدّث الصفحة حتى تطلع رسايل المقابل فوراً)
+st_autorefresh(interval=2000, key="datarefresh")
 
 # الخلفية الوردية
 st.markdown(f"""
@@ -30,9 +34,7 @@ if "my_name" not in st.session_state:
             st.rerun()
         else:
             st.warning("لازم تكتبين اسم حتى تدخلين!")
-    st.stop() # يوقف الكود هنا وما يخلي الباقي يظهر إلا بعد الدخول
-
-# --- إذا تم إدخال الاسم، تظهر الواجهة الجوة ---
+    st.stop()
 
 # القائمة الجانبية (Sidebar)
 st.sidebar.title(f"أهلاً {st.session_state.my_name} ✨")
@@ -48,7 +50,6 @@ if st.sidebar.button("تسجيل الخروج ⬅️"):
 st.title("🎀 محادثة مريوم المشتركة")
 
 for chat in all_msgs:
-    # تنسيق بسيط: إذا الرسالة مني تطلع بلون مختلف (اختياري)
     with st.chat_message("user"):
         st.write(f"**{chat['name']}:** {chat['msg']}")
 
