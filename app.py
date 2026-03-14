@@ -12,60 +12,46 @@ st.markdown(f"""
         background-size: cover;
         background-attachment: fixed;
     }}
-    /* تنسيق فقاعة المستخدم (المرسل) على اليمين */
-    .stChatMessage:nth-child(even) {{
+    /* تنسيق فقاعة المرسل على اليمين */
+    [data-testid="stChatMessage"]:nth-child(even) {{
         background-color: #fce4ec !important;
-        border-radius: 15px 15px 0px 15px !important;
-        margin-left: auto !important;
-        width: fit-content !important;
-        max-width: 80% !important;
-    }}
-    /* تنسيق فقاعة الرد (المستلم) على اليسار */
-    .stChatMessage:nth-child(odd) {{
-        background-color: #ffffff !important;
-        border-radius: 15px 15px 15px 0px !important;
-        width: fit-content !important;
-        max-width: 80% !important;
+        flex-direction: row-reverse !important;
+        text-align: right !important;
     }}
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🎀 تطبيق مريوم الحِلوه")
 
-# نظام الهوية
+# نظام الدخول
 if "username" not in st.session_state:
     st.session_state.username = ""
 
 if not st.session_state.username:
-    with st.container():
-        name = st.text_input("ادخلي اسمج المميز لبدء المراسلة:")
-        if st.button("دخول إلى الدردشة"):
-            if name:
-                st.session_state.username = name
-                st.rerun()
+    name = st.text_input("ادخلي اسمج المميز لبدء المراسلة:")
+    if st.button("دخول"):
+        if name:
+            st.session_state.username = name
+            st.rerun()
 else:
-    # القائمة الجانبيه لإرسال الملفات
+    # القائمة الجانبية للملفات
     with st.sidebar:
         st.header(f"👤 {st.session_state.username}")
         st.divider()
         uploaded_file = st.file_uploader("📎 إرسال ملف أو صورة", type=['png', 'jpg', 'jpeg', 'pdf'])
         if uploaded_file:
-            st.success(f"تم إرسال الملف: {uploaded_file.name}")
+            st.success(f"تم تحميل الملف بنجاح")
 
     # خزن وعرض الرسائل
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # عرض المحادثة بأسلوب التليجرام
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(f"**{msg['user']}:** {msg['content']}")
 
-    # صندوق المراسلة الفوري
-    if prompt := st.chat_input("اكتبي رسالتج هنا مريوم..."):
-        # إضافة رسالتج
+    # صندوق المراسلة (بدون رد تلقائي)
+    if prompt := st.chat_input("اكتبي رسالتج هنا..."):
+        # إضافة الرسالة فقط بدون أي إشعار أو رد
         st.session_state.messages.append({"role": "user", "user": st.session_state.username, "content": prompt})
-        
-        # محاكاة رد النظام (حتى تبين المراسلة شغالة)
-        st.session_state.messages.append({"role": "assistant", "user": "مريوم بوت", "content": f"وصلت رسالتج: {prompt} ✨"})
         st.rerun()
