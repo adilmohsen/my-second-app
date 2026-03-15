@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. الخلفية والتنسيقات (تم توحيد لون الوقت والصحين هنا)
+# 2. التنسيقات (إجبار اللون الرمادي للصحين والوقت)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,18 +15,20 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    /* تنسيق الوقت والصحين بنفس اللون الرمادي */
-    .time-style {{ 
-        font-size: 8px !important; 
-        color: #888; 
-        float: right; 
-        margin-top: 5px; 
+    /* توحيد اللون الرمادي ومنع البنفسجي */
+    .time-container {{
+        color: #888 !important;
+        font-size: 8px !important;
+        float: right;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
     }}
     .status-style {{ 
+        color: #888 !important; 
         font-size: 9px !important; 
-        color: #888 !important; /* تم تغيير اللون هنا ليطابق الوقت */
-        float: right; 
-        margin-left: 3px; 
+        margin-left: 3px;
+        font-weight: normal !important;
     }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
@@ -46,11 +48,10 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية (السايدبار) ---
+# --- القائمة الجانبية ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
     all_msgs.clear(); st.rerun()
-
 if st.sidebar.button("تسجيل الخروج ⬅️"):
     del st.session_state.my_name; st.rerun()
 
@@ -65,22 +66,24 @@ for i, chat in enumerate(all_msgs):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             msg_time = chat.get('time', '') 
             status_icon = "✔️✔️" if chat.get('seen', False) else "✔️"
-            st.markdown(f'<div class="time-style">{msg_time} <span class="status-style">{status_icon}</span></div>', unsafe_allow_html=True)
+            # استخدام div جديد لضمان اللون الرمادي
+            st.markdown(f'''
+                <div class="time-container">
+                    {msg_time} <span class="status-style">{status_icon}</span>
+                </div>
+            ''', unsafe_allow_html=True)
             
     if chat['name'] == st.session_state.my_name:
         with col_options:
             if st.button("⋮", key=f"menu_{i}"):
                 st.session_state[f"show_options_{i}"] = not st.session_state.get(f"show_options_{i}", False)
-            
             if st.session_state.get(f"show_options_{i}", False):
-                if st.button("🗑️", key=f"del_{i}"): 
-                    all_msgs.pop(i); st.rerun()
+                if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
                 if st.button("✏️", key=f"edit_{i}"):
                     st.session_state.edit_index = i
                     st.session_state.edit_text = chat['msg']
                     st.session_state[f"show_options_{i}"] = False; st.rerun()
 
-# منطقة التعديل
 if "edit_index" in st.session_state:
     st.divider()
     new_text = st.text_input("تعديل رسالتج:", value=st.session_state.edit_text)
@@ -88,7 +91,6 @@ if "edit_index" in st.session_state:
         all_msgs[st.session_state.edit_index]['msg'] = new_text
         del st.session_state.edit_index; st.rerun()
 
-# --- إرسال رسالة جديدة (توقيت العراق) ---
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     iraq_time = datetime.now() + timedelta(hours=3)
     now = iraq_time.strftime("%I:%M %p")
