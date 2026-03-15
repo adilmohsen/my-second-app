@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. الخلفية والتنسيقات (تم تصغير الوقت والصحين هنا)
+# 2. الخلفية والتنسيقات (تم توحيد لون الوقت والصحين هنا)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,7 +15,7 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    /* تصغير الوقت والصحين ليكون حجمهم نمنم */
+    /* تنسيق الوقت والصحين بنفس اللون الرمادي */
     .time-style {{ 
         font-size: 8px !important; 
         color: #888; 
@@ -24,7 +24,7 @@ st.markdown(f"""
     }}
     .status-style {{ 
         font-size: 9px !important; 
-        color: #34B7F1; 
+        color: #888 !important; /* تم تغيير اللون هنا ليطابق الوقت */
         float: right; 
         margin-left: 3px; 
     }}
@@ -65,7 +65,6 @@ for i, chat in enumerate(all_msgs):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             msg_time = chat.get('time', '') 
             status_icon = "✔️✔️" if chat.get('seen', False) else "✔️"
-            # عرض الوقت والصحين بالحجم المصغر جداً
             st.markdown(f'<div class="time-style">{msg_time} <span class="status-style">{status_icon}</span></div>', unsafe_allow_html=True)
             
     if chat['name'] == st.session_state.my_name:
