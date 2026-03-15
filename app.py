@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. الخلفية والتنسيقات (حسب الصورة اللي تحبيها)
+# 2. الخلفية والتنسيقات (تم تصغير الوقت والصحين هنا)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -14,8 +14,21 @@ st.markdown(f"""
         background-size: cover;
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
-    .time-style {{ font-size: 10px; color: #888; float: right; margin-top: 5px; }}
-    .status-style {{ font-size: 12px; color: #34B7F1; float: right; margin-left: 5px; }}
+    
+    /* تصغير الوقت والصحين ليكون حجمهم نمنم */
+    .time-style {{ 
+        font-size: 8px !important; 
+        color: #888; 
+        float: right; 
+        margin-top: 5px; 
+    }}
+    .status-style {{ 
+        font-size: 9px !important; 
+        color: #34B7F1; 
+        float: right; 
+        margin-left: 3px; 
+    }}
+    
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -38,7 +51,6 @@ st.sidebar.title(f"الملكة {st.session_state.my_name}")
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
     all_msgs.clear(); st.rerun()
 
-# رجعت لج زر تسجيل الخروج هنا
 if st.sidebar.button("تسجيل الخروج ⬅️"):
     del st.session_state.my_name; st.rerun()
 
@@ -53,6 +65,7 @@ for i, chat in enumerate(all_msgs):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             msg_time = chat.get('time', '') 
             status_icon = "✔️✔️" if chat.get('seen', False) else "✔️"
+            # عرض الوقت والصحين بالحجم المصغر جداً
             st.markdown(f'<div class="time-style">{msg_time} <span class="status-style">{status_icon}</span></div>', unsafe_allow_html=True)
             
     if chat['name'] == st.session_state.my_name:
@@ -60,7 +73,6 @@ for i, chat in enumerate(all_msgs):
             if st.button("⋮", key=f"menu_{i}"):
                 st.session_state[f"show_options_{i}"] = not st.session_state.get(f"show_options_{i}", False)
             
-            # رجعت لج خيارات الحذف والتعديل (القلم)
             if st.session_state.get(f"show_options_{i}", False):
                 if st.button("🗑️", key=f"del_{i}"): 
                     all_msgs.pop(i); st.rerun()
@@ -69,7 +81,7 @@ for i, chat in enumerate(all_msgs):
                     st.session_state.edit_text = chat['msg']
                     st.session_state[f"show_options_{i}"] = False; st.rerun()
 
-# منطقة التعديل (تظهر عند الضغط على القلم)
+# منطقة التعديل
 if "edit_index" in st.session_state:
     st.divider()
     new_text = st.text_input("تعديل رسالتج:", value=st.session_state.edit_text)
