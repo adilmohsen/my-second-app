@@ -1,12 +1,10 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta # ضفنا timedelta هنا
 
-# 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. الخلفية الوردية والتنسيقات (نفس اللي ردتيها بالضبط)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -20,12 +18,10 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. المخزن المشترك
 @st.cache_resource
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# --- شاشة تسجيل الدخول ---
 if "my_name" not in st.session_state:
     st.title("🎀 أهلاً بيج بالچات الوردي")
     name_input = st.text_input("اسمج هنا:")
@@ -33,22 +29,18 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
     all_msgs.clear(); st.rerun()
 
 st.title("🎀 محادثة مريوم المشتركة")
 
-# --- عرض الرسائل ---
 for i, chat in enumerate(all_msgs):
     if chat['name'] != st.session_state.my_name: chat['seen'] = True
     col_msg, col_options = st.columns([0.9, 0.1])
     with col_msg:
         with st.chat_message("user"):
             st.write(f"**{chat['name']}:** {chat['msg']}")
-            
-            # عرض الوقت والحالة
             msg_time = chat.get('time', '') 
             status_icon = "✔️✔️" if chat.get('seen', False) else "✔️"
             st.markdown(f'<div class="time-style">{msg_time} <span class="status-style">{status_icon}</span></div>', unsafe_allow_html=True)
@@ -60,9 +52,8 @@ for i, chat in enumerate(all_msgs):
             if st.session_state.get(f"show_options_{i}", False):
                 if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
 
-# --- إرسال رسالة جديدة (تعديل الوقت هنا) ---
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
-    # إضافة 3 ساعات ليطابق توقيت العراق
+    # هنا التعديل: إضافة 3 ساعات لتوقيت العراق
     iraq_time = datetime.now() + timedelta(hours=3)
     now = iraq_time.strftime("%I:%M %p")
     
