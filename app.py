@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (إجبار اللون الرمادي للصحين والوقت)
+# 2. التنسيقات (إجبار اللون الرمادي)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,20 +15,18 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    /* توحيد اللون الرمادي ومنع البنفسجي */
-    .time-container {{
-        color: #888 !important;
+    /* ستايل الوقت والصحين باللون الرمادي الموحد */
+    .chat-info {{
+        color: #888888 !important;
         font-size: 8px !important;
         float: right;
         margin-top: 5px;
-        display: flex;
-        align-items: center;
+        font-family: sans-serif;
     }}
-    .status-style {{ 
-        color: #888 !important; 
-        font-size: 9px !important; 
-        margin-left: 3px;
-        font-weight: normal !important;
+    .status-icon {{
+        color: #888888 !important;
+        margin-left: 2px;
+        font-size: 9px !important;
     }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
@@ -65,11 +63,12 @@ for i, chat in enumerate(all_msgs):
         with st.chat_message("user"):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             msg_time = chat.get('time', '') 
-            status_icon = "✔️✔️" if chat.get('seen', False) else "✔️"
-            # استخدام div جديد لضمان اللون الرمادي
+            # استخدمنا رمز v بدلاً من الإيموجي لضمان ثبات اللون
+            status_text = "v v" if chat.get('seen', False) else "v"
+            
             st.markdown(f'''
-                <div class="time-container">
-                    {msg_time} <span class="status-style">{status_icon}</span>
+                <div class="chat-info">
+                    {msg_time} <span class="status-icon">{status_text}</span>
                 </div>
             ''', unsafe_allow_html=True)
             
