@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (إجبار اللون الرمادي)
+# 2. التنسيقات (إجبار ظهور علامة + وإخفاء النصوص الزائدة)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,7 +15,6 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    /* ستايل الوقت والصحين باللون الرمادي الموحد */
     .chat-info {{
         color: #888888 !important;
         font-size: 8px !important;
@@ -30,10 +29,17 @@ st.markdown(f"""
     }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
-    
-    /* إخفاء نصوص أداة رفع الملفات لتبقى فقط علامة الزائد */
-    section[data-testid="stSidebar"] .stFileUploader label {{ display: none; }}
-    section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0; }}
+
+    /* تعديل خاص لزر الرفع (+) في السايدبار */
+    section[data-testid="stSidebar"] .stFileUploader label {{
+        font-size: 25px !important;
+        color: #FF69B4 !important;
+        display: block !important;
+        text-align: center;
+    }}
+    section[data-testid="stSidebar"] .stFileUploader section > div {{
+        display: none !important; /* إخفاء نصوص الـ Drag and Drop */
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,8 +59,9 @@ if "my_name" not in st.session_state:
 # --- القائمة الجانبية (السايدبار) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
-# إضافة خاصية رفع الملفات بعلامة (+) فقط
-uploaded_file = st.sidebar.file_uploader("+", key="file_up")
+# أداة الرفع بعلامة + واضحة
+uploaded_file = st.sidebar.file_uploader("+", key="uploader")
+
 if uploaded_file is not None:
     if st.sidebar.button("إرسال الملف 📤"):
         iraq_time = datetime.now() + timedelta(hours=3)
@@ -72,6 +79,7 @@ if uploaded_file is not None:
             "time": now, 
             "seen": False
         })
+        st.sidebar.success("تم الإرسال!")
         st.rerun()
 
 st.sidebar.divider()
@@ -90,7 +98,6 @@ for i, chat in enumerate(all_msgs):
         with st.chat_message("user"):
             st.write(f"**{chat['name']}:** {chat['msg']}")
             
-            # عرض الملف إذا وجد (صورة أو زر تحميل)
             if "file" in chat:
                 if chat["is_image"]:
                     st.image(chat["file"], width=250)
@@ -99,12 +106,7 @@ for i, chat in enumerate(all_msgs):
 
             msg_time = chat.get('time', '') 
             status_text = "v v" if chat.get('seen', False) else "v"
-            
-            st.markdown(f'''
-                <div class="chat-info">
-                    {msg_time} <span class="status-icon">{status_text}</span>
-                </div>
-            ''', unsafe_allow_html=True)
+            st.markdown(f'<div class="chat-info">{msg_time} <span class="status-icon">{status_text}</span></div>', unsafe_allow_html=True)
             
     if chat['name'] == st.session_state.my_name:
         with col_options:
@@ -129,3 +131,4 @@ if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     now = iraq_time.strftime("%I:%M %p")
     all_msgs.append({"name": st.session_state.my_name, "msg": prompt, "time": now, "seen": False})
     st.rerun()
+    
