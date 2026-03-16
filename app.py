@@ -30,6 +30,10 @@ st.markdown(f"""
     }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
+    
+    /* إخفاء نصوص أداة رفع الملفات لتبقى فقط علامة الزائد */
+    section[data-testid="stSidebar"] .stFileUploader label {{ display: none; }}
+    section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -46,8 +50,31 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية ---
+# --- القائمة الجانبية (السايدبار) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
+
+# إضافة خاصية رفع الملفات بعلامة (+) فقط
+uploaded_file = st.sidebar.file_uploader("+", key="file_up")
+if uploaded_file is not None:
+    if st.sidebar.button("إرسال الملف 📤"):
+        iraq_time = datetime.now() + timedelta(hours=3)
+        now = iraq_time.strftime("%I:%M %p")
+        
+        file_bytes = uploaded_file.getvalue()
+        is_image = uploaded_file.type.startswith("image")
+        
+        all_msgs.append({
+            "name": st.session_state.my_name, 
+            "msg": f"أرسل ملفاً: {uploaded_file.name}", 
+            "file": file_bytes,
+            "file_name": uploaded_file.name,
+            "is_image": is_image,
+            "time": now, 
+            "seen": False
+        })
+        st.rerun()
+
+st.sidebar.divider()
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
     all_msgs.clear(); st.rerun()
 if st.sidebar.button("تسجيل الخروج ⬅️"):
@@ -62,8 +89,15 @@ for i, chat in enumerate(all_msgs):
     with col_msg:
         with st.chat_message("user"):
             st.write(f"**{chat['name']}:** {chat['msg']}")
+            
+            # عرض الملف إذا وجد (صورة أو زر تحميل)
+            if "file" in chat:
+                if chat["is_image"]:
+                    st.image(chat["file"], width=250)
+                else:
+                    st.download_button(f"تحميل {chat['file_name']}", chat["file"], file_name=chat["file_name"])
+
             msg_time = chat.get('time', '') 
-            # استخدمنا رمز v بدلاً من الإيموجي لضمان ثبات اللون
             status_text = "v v" if chat.get('seen', False) else "v"
             
             st.markdown(f'''
