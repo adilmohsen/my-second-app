@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (إجبار ظهور علامة + وإخفاء النصوص الزائدة)
+# 2. التنسيقات (إخفاء التفاصيل لتبقى فقط علامة + والصورة صافية)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,31 +15,24 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    .chat-info {{
-        color: #888888 !important;
-        font-size: 8px !important;
-        float: right;
-        margin-top: 5px;
-        font-family: sans-serif;
-    }}
-    .status-icon {{
-        color: #888888 !important;
-        margin-left: 2px;
-        font-size: 9px !important;
-    }}
+    .chat-info {{ color: #888888 !important; font-size: 8px !important; float: right; margin-top: 5px; font-family: sans-serif; }}
+    .status-icon {{ color: #888888 !important; margin-left: 2px; font-size: 9px !important; }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
 
-    /* تعديل خاص لزر الرفع (+) في السايدبار */
+    /* ستايل علامة الـ + وإخفاء كل نصوص الرفع */
     section[data-testid="stSidebar"] .stFileUploader label {{
-        font-size: 25px !important;
-        color: #FF69B4 !important;
+        font-size: 30px !important;
+        color: #888 !important;
         display: block !important;
         text-align: center;
+        cursor: pointer;
     }}
-    section[data-testid="stSidebar"] .stFileUploader section > div {{
-        display: none !important; /* إخفاء نصوص الـ Drag and Drop */
-    }}
+    section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0 !important; border: none !important; background: transparent !important; }}
+    section[data-testid="stSidebar"] .stFileUploader section > div {{ display: none !important; }}
+    
+    /* إخفاء معلومات الملف الإضافية فوق الصورة */
+    [data-testid="stImageCaption"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -59,28 +52,28 @@ if "my_name" not in st.session_state:
 # --- القائمة الجانبية (السايدبار) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
-# أداة الرفع بعلامة + واضحة
-uploaded_file = st.sidebar.file_uploader("+", key="uploader")
+# أداة الرفع بعلامة + (الإرسال التلقائي)
+uploaded_file = st.sidebar.file_uploader("+", key="auto_uploader")
 
 if uploaded_file is not None:
-    if st.sidebar.button("إرسال الملف 📤"):
-        iraq_time = datetime.now() + timedelta(hours=3)
-        now = iraq_time.strftime("%I:%M %p")
-        
-        file_bytes = uploaded_file.getvalue()
-        is_image = uploaded_file.type.startswith("image")
-        
-        all_msgs.append({
-            "name": st.session_state.my_name, 
-            "msg": f"أرسل ملفاً: {uploaded_file.name}", 
-            "file": file_bytes,
-            "file_name": uploaded_file.name,
-            "is_image": is_image,
-            "time": now, 
-            "seen": False
-        })
-        st.sidebar.success("تم الإرسال!")
-        st.rerun()
+    # بمجرد اختيار الملف، يتم الإرسال فوراً
+    iraq_time = datetime.now() + timedelta(hours=3)
+    now = iraq_time.strftime("%I:%M %p")
+    
+    file_bytes = uploaded_file.getvalue()
+    is_image = uploaded_file.type.startswith("image")
+    
+    # إضافة الصورة للمحادثة (بدون نصوص إضافية)
+    all_msgs.append({
+        "name": st.session_state.my_name, 
+        "msg": "" if is_image else f"ملف: {uploaded_file.name}", 
+        "file": file_bytes,
+        "is_image": is_image,
+        "time": now, 
+        "seen": False
+    })
+    # تفريغ الملحق بعد الإرسال التلقائي
+    st.rerun()
 
 st.sidebar.divider()
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
@@ -96,13 +89,16 @@ for i, chat in enumerate(all_msgs):
     col_msg, col_options = st.columns([0.9, 0.1])
     with col_msg:
         with st.chat_message("user"):
-            st.write(f"**{chat['name']}:** {chat['msg']}")
+            if chat["msg"]: # إذا جان اكو نص نطلعه
+                st.write(f"**{chat['name']}:** {chat['msg']}")
+            else: # إذا فقط صورة نطلع الاسم وراها الصورة
+                st.write(f"**{chat['name']}:**")
             
             if "file" in chat:
                 if chat["is_image"]:
-                    st.image(chat["file"], width=250)
+                    st.image(chat["file"], use_container_width=True)
                 else:
-                    st.download_button(f"تحميل {chat['file_name']}", chat["file"], file_name=chat["file_name"])
+                    st.download_button("تحميل الملف", chat["file"])
 
             msg_time = chat.get('time', '') 
             status_text = "v v" if chat.get('seen', False) else "v"
@@ -114,21 +110,9 @@ for i, chat in enumerate(all_msgs):
                 st.session_state[f"show_options_{i}"] = not st.session_state.get(f"show_options_{i}", False)
             if st.session_state.get(f"show_options_{i}", False):
                 if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
-                if st.button("✏️", key=f"edit_{i}"):
-                    st.session_state.edit_index = i
-                    st.session_state.edit_text = chat['msg']
-                    st.session_state[f"show_options_{i}"] = False; st.rerun()
-
-if "edit_index" in st.session_state:
-    st.divider()
-    new_text = st.text_input("تعديل رسالتج:", value=st.session_state.edit_text)
-    if st.button("حفظ التعديل ✅"):
-        all_msgs[st.session_state.edit_index]['msg'] = new_text
-        del st.session_state.edit_index; st.rerun()
 
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     iraq_time = datetime.now() + timedelta(hours=3)
     now = iraq_time.strftime("%I:%M %p")
     all_msgs.append({"name": st.session_state.my_name, "msg": prompt, "time": now, "seen": False})
     st.rerun()
-    
