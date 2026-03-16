@@ -53,7 +53,8 @@ if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
 if st.sidebar.button("تسجيل الخروج ⬅️"):
     del st.session_state.my_name; st.rerun()
 
-st.title("🎀 محادثة مريوم المشتركة")
+# تم تغيير اسم المحادثة هنا مريوم
+st.title("Canım 🎀")
 
 # --- عرض الرسائل ---
 for i, chat in enumerate(all_msgs):
