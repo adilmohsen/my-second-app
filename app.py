@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (إخفاء التفاصيل وجمالية الـ +)
+# 2. التنسيقات (إخفاء التفاصيل لتبقى فقط علامة + والصورة صافية)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -20,18 +20,19 @@ st.markdown(f"""
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
 
-    /* ستايل علامة الـ + الاحترافي في السايدبار */
+    /* ستايل علامة الـ + وإخفاء كل نصوص الرفع */
     section[data-testid="stSidebar"] .stFileUploader label {{
-        font-size: 30px !important;
+        font-size: 35px !important;
         color: #888 !important;
         display: block !important;
         text-align: center;
         cursor: pointer;
+        margin-top: -10px;
     }}
     section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0 !important; border: none !important; background: transparent !important; }}
     section[data-testid="stSidebar"] .stFileUploader section > div {{ display: none !important; }}
     
-    /* إخفاء أي نصوص إضافية فوق الصور */
+    /* إخفاء معلومات الملف الإضافية فوق الصورة */
     [data-testid="stImageCaption"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -52,22 +53,24 @@ if "my_name" not in st.session_state:
 # --- القائمة الجانبية (السايدبار) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
-# ميزة رفع الصور التلقائي (+)
-uploaded_file = st.sidebar.file_uploader("+", key="meryoum_up", type=['png', 'jpg', 'jpeg'])
+# ميزة رفع الصور التلقائي والمتعدد (+)
+uploaded_files = st.sidebar.file_uploader("+", key="meryoum_super_up", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
 
-if uploaded_file is not None:
+if uploaded_files:
     iraq_time = datetime.now() + timedelta(hours=3)
     now = iraq_time.strftime("%I:%M %p")
     
-    # إضافة الصورة للمحادثة فوراً
-    all_msgs.append({
-        "name": st.session_state.my_name, 
-        "msg": "", 
-        "file": uploaded_file.getvalue(),
-        "is_image": True,
-        "time": now, 
-        "seen": False
-    })
+    # إضافة كل الصور المختارة للمحادثة فوراً كبل
+    for uploaded_file in uploaded_files:
+        all_msgs.append({
+            "name": st.session_state.my_name, 
+            "msg": "", 
+            "file": uploaded_file.getvalue(),
+            "is_image": True,
+            "time": now, 
+            "seen": False
+        })
+    # تفريغ أداة الرفع بعد الإرسال
     st.rerun()
 
 st.sidebar.divider()
@@ -84,12 +87,13 @@ for i, chat in enumerate(all_msgs):
     col_msg, col_options = st.columns([0.9, 0.1])
     with col_msg:
         with st.chat_message("user"):
+            # إذا جان اكو نص نطلعه، وإذا فقط صورة نطلع الاسم
             if chat["msg"]:
                 st.write(f"**{chat['name']}:** {chat['msg']}")
             else:
                 st.write(f"**{chat['name']}:**")
             
-            # عرض الصور وحفظها
+            # عرض الصور الصافية مع زر حفظ
             if "file" in chat and chat["is_image"]:
                 st.image(chat["file"], use_container_width=True)
                 st.download_button("حفظ 📥", chat["file"], file_name=f"Canim_{i}.png", key=f"dl_{i}")
