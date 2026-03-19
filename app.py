@@ -72,11 +72,15 @@ for i, chat in enumerate(all_msgs):
     
     with col_msg:
         with st.chat_message("user"):
-            st.write(f"**{chat['name']}:**")
+            # التعديل هنا: دمج الاسم والرسالة بسطر واحد
+            if chat["msg"]:
+                st.write(f"**{chat['name']}:** {chat['msg']}")
+            else:
+                st.write(f"**{chat['name']}:**")
+            
             if "file" in chat and chat["is_image"]:
                 st.image(chat["file"], use_container_width=True)
                 st.download_button("حفظ 📥", chat["file"], file_name=f"Canim_{i}.png", key=f"dl_{i}")
-            if chat["msg"]: st.write(chat["msg"])
             
             t, s = chat.get('time', ''), ("v v" if chat.get('seen', False) else "v")
             st.markdown(f'<div class="chat-info">{t} <span class="status-icon">{s}</span></div>', unsafe_allow_html=True)
@@ -87,7 +91,6 @@ for i, chat in enumerate(all_msgs):
                 st.session_state[f"opt_{i}"] = not st.session_state.get(f"opt_{i}", False)
             if st.session_state.get(f"opt_{i}", False):
                 if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
-                # إضافة زر التعديل للرسائل النصية فقط
                 if chat["msg"] and st.button("✏️", key=f"ed_{i}"):
                     st.session_state.edit_idx = i
                     st.session_state.edit_val = chat['msg']
