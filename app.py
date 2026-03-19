@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (إجبار اللون الرمادي)
+# 2. التنسيقات (تصليح شكل الـ + كرسالة وبدون نصوص)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -15,30 +15,44 @@ st.markdown(f"""
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
     
-    /* ستايل الوقت والصحين باللون الرمادي الموحد */
-    .chat-info {{
-        color: #888888 !important;
-        font-size: 8px !important;
-        float: right;
-        margin-top: 5px;
-        font-family: sans-serif;
-    }}
-    .status-icon {{
-        color: #888888 !important;
-        margin-left: 2px;
-        font-size: 9px !important;
-    }}
+    .chat-info {{ color: #888888 !important; font-size: 8px !important; float: right; margin-top: 5px; font-family: sans-serif; }}
+    .status-icon {{ color: #888888 !important; margin-left: 2px; font-size: 9px !important; }}
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
+
+    /* ستايل علامة الـ + الاحترافي في السايدبار كرسالة */
+    section[data-testid="stSidebar"] .stFileUploader label {{
+        font-size: 35px !important;
+        color: #888 !important;
+        display: block !important;
+        text-align: center;
+        cursor: pointer;
+    }}
+    section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0 !important; border: none !important; background: transparent !important; }}
+    /* إخفاء نصوص الـ Drag and Drop والنصوص الإضافية */
+    section[data-testid="stSidebar"] .stFileUploader section > div {{ display: none !important; }}
+    section[data-testid="stSidebar"] .stFileUploader [data-testid="stMarkdownContainer"] {{ display: none !important; }}
+    
+    /* إخفاء أي نصوص إضافية فوق الصور */
+    [data-testid="stImageCaption"] {{ display: none !important; }}
+    
+    /* تنسيق زر "إرسال كرسالة" ليكون نازك */
+    [data-testid="stSidebar"] [data-testid="stForm"] > [data-testid="stButton"] button {{
+        font-size: 14px !important;
+        background-color: transparent !important;
+        border: 1px solid #ddd !important;
+        border-radius: 10px !important;
+        color: #888 !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-# 3. المخزن المشترك
+# 3. المخزن المشترك للرسايل
 @st.cache_resource
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
-# --- شاشة تسجيل الدخول ---
+# --- تسجيل الدخول ---
 if "my_name" not in st.session_state:
     st.title("🎀 أهلاً بيج بالچات الوردي")
     name_input = st.text_input("اسمج هنا:")
@@ -46,32 +60,62 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية ---
+# --- القائمة الجانبية (السايدبار) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
+
+# ميزة رفع الصور كرسالة (الحل النهائي للتكرار ولغوة السايدبار)
+with st.sidebar.form(key='meryoum_super_up_form'):
+    # أداة الرفع المتعدد بعلامة (+) فقط
+    uploaded_files = st.file_uploader("+", key="final_up_meryoum", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
+    # زر الإرسال كرسالة لضمان الإرسال لمرة واحدة وتصفير السايدبار
+    submit_button = st.form_submit_button(label='إرسال كرسالة 📤')
+
+    if submit_button and uploaded_files:
+        iraq_time = datetime.now() + timedelta(hours=3)
+        now = iraq_time.strftime("%I:%M %p")
+        
+        # إضافة كل الصور المختارة للمحادثة فوراً كرسائل
+        for uploaded_file in uploaded_files:
+            all_msgs.append({
+                "name": st.session_state.my_name, 
+                "msg": "", 
+                "file": uploaded_file.getvalue(),
+                "is_image": True,
+                "time": now, 
+                "seen": False
+            })
+        st.session_state["final_up_meryoum"] = [] # تصفير أداة الرفع لضمان عدم بقائها في السايدبار
+        st.rerun()
+
+st.sidebar.divider()
 if st.sidebar.button("حذف كل الرسايل للكل 🗑️"):
     all_msgs.clear(); st.rerun()
 if st.sidebar.button("تسجيل الخروج ⬅️"):
     del st.session_state.my_name; st.rerun()
 
-# تم تغيير اسم المحادثة هنا مريوم
 st.title("Canım 🎀")
 
-# --- عرض الرسائل ---
+# --- عرض المحادثة ---
 for i, chat in enumerate(all_msgs):
     if chat['name'] != st.session_state.my_name: chat['seen'] = True
     col_msg, col_options = st.columns([0.9, 0.1])
     with col_msg:
         with st.chat_message("user"):
-            st.write(f"**{chat['name']}:** {chat['msg']}")
-            msg_time = chat.get('time', '') 
-            # استخدمنا رمز v بدلاً من الإيموجي لضمان ثبات اللون
-            status_text = "v v" if chat.get('seen', False) else "v"
+            # إذا جان اكو نص نطلعه، وإذا فقط صورة نطلع الاسم
+            if chat["msg"]:
+                st.write(f"**{chat['name']}:** {chat['msg']}")
+            else:
+                st.write(f"**{chat['name']}:**")
             
-            st.markdown(f'''
-                <div class="chat-info">
-                    {msg_time} <span class="status-icon">{status_text}</span>
-                </div>
-            ''', unsafe_allow_html=True)
+            # عرض الصور الصافية كرسائل وبدون لغوة
+            if "file" in chat and chat["is_image"]:
+                st.image(chat["file"], use_container_width=True)
+                st.download_button("حفظ 📥", chat["file"], file_name=f"Canim_{i}.png", key=f"dl_{i}")
+
+            # الوقت والصحين الرمادية
+            t = chat.get('time', '')
+            s = "v v" if chat.get('seen', False) else "v"
+            st.markdown(f'<div class="chat-info">{t} <span class="status-icon">{s}</span></div>', unsafe_allow_html=True)
             
     if chat['name'] == st.session_state.my_name:
         with col_options:
@@ -79,18 +123,8 @@ for i, chat in enumerate(all_msgs):
                 st.session_state[f"show_options_{i}"] = not st.session_state.get(f"show_options_{i}", False)
             if st.session_state.get(f"show_options_{i}", False):
                 if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
-                if st.button("✏️", key=f"edit_{i}"):
-                    st.session_state.edit_index = i
-                    st.session_state.edit_text = chat['msg']
-                    st.session_state[f"show_options_{i}"] = False; st.rerun()
 
-if "edit_index" in st.session_state:
-    st.divider()
-    new_text = st.text_input("تعديل رسالتج:", value=st.session_state.edit_text)
-    if st.button("حفظ التعديل ✅"):
-        all_msgs[st.session_state.edit_index]['msg'] = new_text
-        del st.session_state.edit_index; st.rerun()
-
+# إرسال النص
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     iraq_time = datetime.now() + timedelta(hours=3)
     now = iraq_time.strftime("%I:%M %p")
