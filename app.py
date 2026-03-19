@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات (الخلفية، الألوان الرمادية، وستايل الأزرار)
+# 2. التنسيقات (إخفاء كل شيء وبقاء علامة + فقط)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -20,18 +20,14 @@ st.markdown(f"""
     
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
 
-    /* ستايل علامة الـ + وإخفاء لغوة الرفع */
+    /* ستايل علامة الـ + السحرية */
     section[data-testid="stSidebar"] .stFileUploader label {{
-        font-size: 35px !important; color: #888 !important; display: block !important; text-align: center; cursor: pointer;
+        font-size: 40px !important; color: #888 !important; display: block !important; text-align: center; cursor: pointer;
     }}
     section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0 !important; border: none !important; background: transparent !important; }}
+    /* إخفاء زر Browse وكل النصوص المزعجة */
     section[data-testid="stSidebar"] .stFileUploader section > div {{ display: none !important; }}
     section[data-testid="stSidebar"] .stFileUploader [data-testid="stMarkdownContainer"] {{ display: none !important; }}
-    
-    /* زر الإرسال بالسايدبار */
-    [data-testid="stSidebar"] [data-testid="stForm"] > [data-testid="stButton"] button {{
-        font-size: 14px !important; background-color: transparent !important; border: 1px solid #ddd !important; border-radius: 10px !important; color: #888 !important; width: 100%;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -39,6 +35,22 @@ st.markdown(f"""
 @st.cache_resource
 def get_global_messages(): return []
 all_msgs = get_global_messages()
+
+# وظيفة الإرسال التلقائي للصور
+def upload_callback():
+    if st.session_state.up_files:
+        now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
+        for f in st.session_state.up_files:
+            all_msgs.append({
+                "name": st.session_state.my_name, 
+                "msg": "", 
+                "file": f.getvalue(), 
+                "is_image": True, 
+                "time": now, 
+                "seen": False
+            })
+        # تصفير الأداة بعد الرفع كبل
+        st.session_state.up_files = []
 
 # --- تسجيل الدخول ---
 if "my_name" not in st.session_state:
@@ -48,16 +60,11 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية (+) ---
+# --- القائمة الجانبية (علامة + فقط) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
-with st.sidebar.form(key='meryoum_up_form', clear_on_submit=True):
-    files = st.file_uploader("+", key="up_files", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True)
-    if st.form_submit_button(label='إرسال الصور 📤') and files:
-        now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
-        for f in files:
-            all_msgs.append({"name": st.session_state.my_name, "msg": "", "file": f.getvalue(), "is_image": True, "time": now, "seen": False})
-        st.rerun()
+# أداة الرفع السحرية (بدون فورم وبدون أزرار)
+st.sidebar.file_uploader("+", key="up_files", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, on_change=upload_callback)
 
 st.sidebar.divider()
 if st.sidebar.button("حذف الكل 🗑️"): all_msgs.clear(); st.rerun()
@@ -72,7 +79,7 @@ for i, chat in enumerate(all_msgs):
     
     with col_msg:
         with st.chat_message("user"):
-            # التعديل هنا: دمج الاسم والرسالة بسطر واحد
+            # الاسم والرسالة بنفس السطر
             if chat["msg"]:
                 st.write(f"**{chat['name']}:** {chat['msg']}")
             else:
