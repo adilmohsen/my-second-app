@@ -3,7 +3,7 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
 
 # --- إعداد الباسورد (تكدرين تغيري منا) ---
-PASSWORD = "Meryoum123"
+PASSWORD = "261239"
 
 # 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
