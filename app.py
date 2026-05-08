@@ -2,6 +2,9 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
 
+# --- إعداد الباسورد (تكدرين تغيري منا) ---
+PASSWORD = "Meryoum123"
+
 # 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
@@ -52,11 +55,23 @@ def upload_callback():
         # تصفير الأداة بعد الرفع كبل
         st.session_state.up_files = []
 
-# --- تسجيل الدخول ---
+# --- نظام الحماية (الباسورد) ---
+if "authenticated" not in st.session_state:
+    st.title("🎀 منطقة خاصة للملكات")
+    pass_input = st.text_input("أدخلي كلمة المرور للوصول:", type="password")
+    if st.button("دخول"):
+        if pass_input == PASSWORD:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("كلمة المرور غلط! ❌")
+    st.stop()
+
+# --- تسجيل الدخول (الاسم) ---
 if "my_name" not in st.session_state:
     st.title("🎀 أهلاً بيج بالچات الوردي")
     name_input = st.text_input("اسمج هنا:")
-    if st.button("دخول"):
+    if st.button("تأكيد الاسم"):
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
@@ -68,7 +83,10 @@ st.sidebar.file_uploader("+", key="up_files", type=['png', 'jpg', 'jpeg'], accep
 
 st.sidebar.divider()
 if st.sidebar.button("حذف الكل 🗑️"): all_msgs.clear(); st.rerun()
-if st.sidebar.button("خروج ⬅️"): del st.session_state.my_name; st.rerun()
+if st.sidebar.button("خروج ⬅️"): 
+    del st.session_state.my_name
+    del st.session_state.authenticated
+    st.rerun()
 
 st.title("Canım 🎀")
 
