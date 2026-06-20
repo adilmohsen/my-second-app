@@ -1,21 +1,15 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
-import os
 
-# --- إعداد مجلد الصور المؤقت لمنع تعليق الذاكرة ---
-TEMP_IMAGE_DIR = "temp_images"
-if not os.path.exists(TEMP_IMAGE_DIR):
-    os.makedirs(TEMP_IMAGE_DIR)
-
-# --- إعداد الباسورد ---
+# --- إعداد الباسورد (تكدرين تغيري منا) ---
 PASSWORD = "261239"
 
 # 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
 st_autorefresh(interval=1000, key="datarefresh")
 
-# 2. التنسيقات
+# 2. التنسيقات (إخفاء كل شيء وبقاء علامة + فقط)
 st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
@@ -23,8 +17,20 @@ st.markdown(f"""
         background-size: cover;
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
+    
     .chat-info {{ color: #888888 !important; font-size: 8px !important; float: right; margin-top: 5px; font-family: sans-serif; }}
     .status-icon {{ color: #888888 !important; margin-left: 2px; font-size: 9px !important; }}
+    
+    .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
+
+    /* ستايل علامة الـ + السحرية */
+    section[data-testid="stSidebar"] .stFileUploader label {{
+        font-size: 40px !important; color: #888 !important; display: block !important; text-align: center; cursor: pointer;
+    }}
+    section[data-testid="stSidebar"] .stFileUploader section {{ padding: 0 !important; border: none !important; background: transparent !important; }}
+    /* إخفاء زر Browse وكل النصوص المزعجة */
+    section[data-testid="stSidebar"] .stFileUploader section > div {{ display: none !important; }}
+    section[data-testid="stSidebar"] .stFileUploader [data-testid="stMarkdownContainer"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -33,55 +39,98 @@ st.markdown(f"""
 def get_global_messages(): return []
 all_msgs = get_global_messages()
 
+# وظيفة الإرسال التلقائي للصور
 def upload_callback():
     if st.session_state.up_files:
         now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
         for f in st.session_state.up_files:
-            file_path = os.path.join(TEMP_IMAGE_DIR, f.name)
-            with open(file_path, "wb") as f_out:
-                f_out.write(f.getvalue())
             all_msgs.append({
                 "name": st.session_state.my_name, 
-                "msg": "", "file_path": file_path, "is_image": True, 
-                "time": now, "seen": False
+                "msg": "", 
+                "file": f.getvalue(), 
+                "is_image": True, 
+                "time": now, 
+                "seen": False
             })
+        # تصفير الأداة بعد الرفع كبل
         st.session_state.up_files = []
 
-# --- الحماية والاسم ---
+# --- نظام الحماية (الباسورد) ---
 if "authenticated" not in st.session_state:
     st.title("🎀 منطقة خاصة للملكات")
-    pass_input = st.text_input("كلمة المرور:", type="password")
+    pass_input = st.text_input("أدخلي كلمة المرور للوصول:", type="password")
     if st.button("دخول"):
-        if pass_input == PASSWORD: st.session_state.authenticated = True; st.rerun()
-        else: st.error("غلط! ❌")
+        if pass_input == PASSWORD:
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.error("كلمة المرور غلط! ❌")
     st.stop()
 
+# --- تسجيل الدخول (الاسم) ---
 if "my_name" not in st.session_state:
-    st.title("🎀 أهلاً بيج")
-    name_input = st.text_input("اسمج:")
-    if st.button("تأكيد"):
+    st.title("🎀 أهلاً بيج بالچات الوردي")
+    name_input = st.text_input("اسمج هنا:")
+    if st.button("تأكيد الاسم"):
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- القائمة الجانبية ---
+# --- القائمة الجانبية (علامة + فقط) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
-st.sidebar.file_uploader("+", key="up_files", type=['png', 'jpg'], accept_multiple_files=True, on_change=upload_callback)
 
+# أداة الرفع السحرية (بدون فورم وبدون أزرار)
+st.sidebar.file_uploader("+", key="up_files", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, on_change=upload_callback)
+
+st.sidebar.divider()
 if st.sidebar.button("حذف الكل 🗑️"): all_msgs.clear(); st.rerun()
+if st.sidebar.button("خروج ⬅️"): 
+    del st.session_state.my_name
+    del st.session_state.authenticated
+    st.rerun()
 
 st.title("Canım 🎀")
 
 # --- عرض المحادثة ---
 for i, chat in enumerate(all_msgs):
     if chat['name'] != st.session_state.my_name: chat['seen'] = True
-    with st.chat_message("user"):
-        st.write(f"**{chat['name']}:** {chat.get('msg', '')}")
-        if chat.get("is_image") and os.path.exists(chat["file_path"]):
-            st.image(chat["file_path"], use_container_width=True)
-        t = chat.get('time', '')
-        st.markdown(f'<div class="chat-info">{t}</div>', unsafe_allow_html=True)
+    col_msg, col_options = st.columns([0.85, 0.15])
+    
+    with col_msg:
+        with st.chat_message("user"):
+            # الاسم والرسالة بنفس السطر
+            if chat["msg"]:
+                st.write(f"**{chat['name']}:** {chat['msg']}")
+            else:
+                st.write(f"**{chat['name']}:**")
+            
+            if "file" in chat and chat["is_image"]:
+                st.image(chat["file"], use_container_width=True)
+                st.download_button("حفظ 📥", chat["file"], file_name=f"Canim_{i}.png", key=f"dl_{i}")
+            
+            t, s = chat.get('time', ''), ("v v" if chat.get('seen', False) else "v")
+            st.markdown(f'<div class="chat-info">{t} <span class="status-icon">{s}</span></div>', unsafe_allow_html=True)
+            
+    if chat['name'] == st.session_state.my_name:
+        with col_options:
+            if st.button("⋮", key=f"menu_{i}"):
+                st.session_state[f"opt_{i}"] = not st.session_state.get(f"opt_{i}", False)
+            if st.session_state.get(f"opt_{i}", False):
+                if st.button("🗑️", key=f"del_{i}"): all_msgs.pop(i); st.rerun()
+                if chat["msg"] and st.button("✏️", key=f"ed_{i}"):
+                    st.session_state.edit_idx = i
+                    st.session_state.edit_val = chat['msg']
+                    st.session_state[f"opt_{i}"] = False; st.rerun()
 
-if prompt := st.chat_input("اكتبي رسالتج..."):
+# --- واجهة التعديل ---
+if "edit_idx" in st.session_state:
+    st.divider()
+    new_txt = st.text_input("تعديل الرسالة:", value=st.session_state.edit_val)
+    if st.button("حفظ ✅"):
+        all_msgs[st.session_state.edit_idx]['msg'] = new_txt
+        del st.session_state.edit_idx; st.rerun()
+
+# إرسال نص جديد
+if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
     all_msgs.append({"name": st.session_state.my_name, "msg": prompt, "time": now, "seen": False})
     st.rerun()
