@@ -3,16 +3,14 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
 import requests
 
-# --- إعدادات الباسورد والبوت الأساسية ---
+# --- إعدادات الباسورد الأساسية ---
 PASSWORD = "261239"
 
-# 🔑 ضعي توكن البوت الخاص بيج هنا (يبقى ثابت):
-TELEGRAM_BOT_TOKEN = "أدخلي_التوكن_هنا"
-
-def send_telegram_notification(chat_id, message_text):
-    if TELEGRAM_BOT_TOKEN == "أدخلي_التوكن_هنا" or not chat_id:
+# وظيفة إرسال الإشعار لتليجرام
+def send_telegram_notification(bot_token, chat_id, message_text):
+    if not bot_token or not chat_id:
         return 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
         "text": f"👑 رسالة جديدة في چات Canım:\n\n{message_text}",
@@ -73,7 +71,7 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# وظيفة رفع الصور مع إرسال الإشعار للـ Chat ID المدخل
+# وظيفة رفع الصور مع إرسال الإشعار
 def upload_callback():
     if st.session_state.up_files:
         now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
@@ -86,15 +84,20 @@ def upload_callback():
                 "time": now, 
                 "seen": False
             })
-            target_chat_id = st.session_state.get("target_chat_id", "")
-            send_telegram_notification(target_chat_id, f"{st.session_state.my_name} أرسلت صورة 📷")
+            b_token = st.session_state.get("bot_token_input", "")
+            t_chat_id = st.session_state.get("target_chat_id", "")
+            send_telegram_notification(b_token, t_chat_id, f"{st.session_state.my_name} أرسلت صورة 📷")
         st.session_state.up_files = []
 
-# --- القائمة الجانبية (مع خانة ايدي الشخص المقابل) ---
+# --- القائمة الجانبية (مع حقول البوت والـ ID) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
 st.sidebar.markdown("### 🔔 إعدادات إشعار تليجرام")
-target_id_input = st.sidebar.text_input("ايدي الشخص المقابل (Chat ID):", value=st.session_state.get("target_chat_id", ""))
+token_input = st.sidebar.text_input("توكن البوت (Bot Token):", value=st.session_state.get("bot_token_input", ""), type="password")
+if token_input:
+    st.session_state.bot_token_input = token_input
+
+target_id_input = st.sidebar.text_input("إيدي الشخص المقابل (Chat ID):", value=st.session_state.get("target_chat_id", ""))
 if target_id_input:
     st.session_state.target_chat_id = target_id_input
 
@@ -148,13 +151,14 @@ if "edit_idx" in st.session_state:
         all_msgs[st.session_state.edit_idx]['msg'] = new_txt
         del st.session_state.edit_idx; st.rerun()
 
-# إرسال نص جديد مع إشعار تليجرام للـ Chat ID المدخل
+# إرسال نص جديد مع إشعار تليجرام
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
     all_msgs.append({"name": st.session_state.my_name, "msg": prompt, "time": now, "seen": False})
     
-    # جلب الـ Chat ID المكتوب بالقائمة الجانبية وإرسال الإشعار إله
-    target_chat_id = st.session_state.get("target_chat_id", "")
-    send_telegram_notification(target_chat_id, f"*{st.session_state.my_name}*: {prompt}")
+    # جلب التوكن والإيدي المكتوبين بالقائمة الجانبية وإرسال الإشعار
+    b_token = st.session_state.get("bot_token_input", "")
+    t_chat_id = st.session_state.get("target_chat_id", "")
+    send_telegram_notification(b_token, t_chat_id, f"*{st.session_state.my_name}*: {prompt}")
     
     st.rerun()
