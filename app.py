@@ -1,10 +1,27 @@
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, timedelta
-import streamlit.components.v1 as components
+import requests
 
-# --- إعداد الباسورد ---
+# --- إعدادات الباسورد والبوت الأساسية ---
 PASSWORD = "261239"
+
+# 🔑 ضعي توكن البوت الخاص بيج هنا (يبقى ثابت):
+TELEGRAM_BOT_TOKEN = "أدخلي_التوكن_هنا"
+
+def send_telegram_notification(chat_id, message_text):
+    if TELEGRAM_BOT_TOKEN == "أدخلي_التوكن_هنا" or not chat_id:
+        return 
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": f"👑 رسالة جديدة في چات Canım:\n\n{message_text}",
+        "parse_mode": "Markdown"
+    }
+    try:
+        requests.post(url, json=payload)
+    except:
+        pass
 
 # 1. إعدادات الصفحة
 st.set_page_config(page_title="The Queen Meryoum 👑", page_icon="🎀")
@@ -18,13 +35,10 @@ st.markdown(f"""
         background-size: cover;
     }}
     .stChatMessage {{ background-color: rgba(255, 255, 255, 0.8) !important; border-radius: 15px; }}
-    
     .chat-info {{ color: #888888 !important; font-size: 8px !important; float: right; margin-top: 5px; font-family: sans-serif; }}
     .status-icon {{ color: #888888 !important; margin-left: 2px; font-size: 9px !important; }}
-    
     .stButton button {{ border: none !important; background: transparent !important; color: #888 !important; font-size: 20px !important; }}
 
-    /* ستايل علامة الـ + السحرية */
     section[data-testid="stSidebar"] .stFileUploader label {{
         font-size: 40px !important; color: #888 !important; display: block !important; text-align: center; cursor: pointer;
     }}
@@ -38,21 +52,6 @@ st.markdown(f"""
 @st.cache_resource
 def get_global_messages(): return []
 all_msgs = get_global_messages()
-
-# وظيفة الإرسال التلقائي للصور
-def upload_callback():
-    if st.session_state.up_files:
-        now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
-        for f in st.session_state.up_files:
-            all_msgs.append({
-                "name": st.session_state.my_name, 
-                "msg": "", 
-                "file": f.getvalue(), 
-                "is_image": True, 
-                "time": now, 
-                "seen": False
-            })
-        st.session_state.up_files = []
 
 # --- نظام الحماية ---
 if "authenticated" not in st.session_state:
@@ -74,59 +73,36 @@ if "my_name" not in st.session_state:
         if name_input: st.session_state.my_name = name_input; st.rerun()
     st.stop()
 
-# --- 🔔 نظام الإشعارات والتحقق من الرسائل الجديدة ---
-if "last_msg_count" not in st.session_state:
-    st.session_state.last_msg_count = len(all_msgs)
+# وظيفة رفع الصور مع إرسال الإشعار للـ Chat ID المدخل
+def upload_callback():
+    if st.session_state.up_files:
+        now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
+        for f in st.session_state.up_files:
+            all_msgs.append({
+                "name": st.session_state.my_name, 
+                "msg": "", 
+                "file": f.getvalue(), 
+                "is_image": True, 
+                "time": now, 
+                "seen": False
+            })
+            target_chat_id = st.session_state.get("target_chat_id", "")
+            send_telegram_notification(target_chat_id, f"{st.session_state.my_name} أرسلت صورة 📷")
+        st.session_state.up_files = []
 
-# التحقق هل وصل عدد الرسائل لأكثر مما نعرف وهل الرسالة من شخص آخر؟
-if len(all_msgs) > st.session_state.last_msg_count:
-    last_msg = all_msgs[-1]
-    if last_msg["name"] != st.session_state.my_name:
-        # 1. إشعار داخل التطبيق (Toast)
-        sender = last_msg['name']
-        msg_content = "📷 صورة جديدة" if last_msg.get("is_image") else last_msg['msg']
-        st.toast(f"💬 رسالة جديدة من {sender}: {msg_content}", icon="🎀")
-        
-        # 2. إشعار صوتي + إشعار المتصفح (Browser Notification) عبر JS
-        js_notification = f"""
-        <script>
-        if (Notification.permission === "granted") {{
-            new Notification("رسالة جديدة من {sender} 👑", {{
-                body: "{msg_content}",
-                icon: "https://em-content.zobj.net/source/apple/354/ribbon_1f380.png"
-            }});
-        }} else if (Notification.permission !== "denied") {{
-            Notification.requestPermission();
-        }}
-        </script>
-        """
-        components.html(js_notification, height=0)
-
-    st.session_state.last_msg_count = len(all_msgs)
-
-# --- القائمة الجانبية ---
+# --- القائمة الجانبية (مع خانة ايدي الشخص المقابل) ---
 st.sidebar.title(f"الملكة {st.session_state.my_name}")
 
-# زر لتفعيل إشعارات المتصفح
-if st.sidebar.button("تفعيل إشعارات الشاشة 🔔"):
-    components.html("""
-        <script>
-        Notification.requestPermission().then(function(permission) {
-            if (permission === 'granted') {
-                alert('تم تفعيل الإشعارات بنجاح! 👑');
-            }
-        });
-        </script>
-    """, height=0)
+st.sidebar.markdown("### 🔔 إعدادات إشعار تليجرام")
+target_id_input = st.sidebar.text_input("ايدي الشخص المقابل (Chat ID):", value=st.session_state.get("target_chat_id", ""))
+if target_id_input:
+    st.session_state.target_chat_id = target_id_input
 
+st.sidebar.divider()
 st.sidebar.file_uploader("+", key="up_files", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, on_change=upload_callback)
 
 st.sidebar.divider()
-if st.sidebar.button("حذف الكل 🗑️"): 
-    all_msgs.clear()
-    st.session_state.last_msg_count = 0
-    st.rerun()
-
+if st.sidebar.button("حذف الكل 🗑️"): all_msgs.clear(); st.rerun()
 if st.sidebar.button("خروج ⬅️"): 
     del st.session_state.my_name
     del st.session_state.authenticated
@@ -172,8 +148,13 @@ if "edit_idx" in st.session_state:
         all_msgs[st.session_state.edit_idx]['msg'] = new_txt
         del st.session_state.edit_idx; st.rerun()
 
-# إرسال نص جديد
+# إرسال نص جديد مع إشعار تليجرام للـ Chat ID المدخل
 if prompt := st.chat_input("اكتبي رسالتج هنا..."):
     now = (datetime.now() + timedelta(hours=3)).strftime("%I:%M %p")
     all_msgs.append({"name": st.session_state.my_name, "msg": prompt, "time": now, "seen": False})
+    
+    # جلب الـ Chat ID المكتوب بالقائمة الجانبية وإرسال الإشعار إله
+    target_chat_id = st.session_state.get("target_chat_id", "")
+    send_telegram_notification(target_chat_id, f"*{st.session_state.my_name}*: {prompt}")
+    
     st.rerun()
